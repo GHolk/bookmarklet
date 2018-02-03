@@ -1,5 +1,3 @@
-// book mark let
-
 const urlToPlayer = {}
 urlToPlayer.youtube = function (location) {
     const scan = location.search.match(/[&\/\?]v=([^&]*)/)
@@ -22,5 +20,4 @@ function createButton() {
     document.getElementById(menuId).appendChild(button)
 }
 
-createButton()
-
+openCleanWindow(urlToPlayer.youtube(location))
