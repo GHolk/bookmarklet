@@ -1,0 +1,40 @@
+<meta charset="UTF-8">
+
+<h2>
+  <a rel="sidebar"
+     title="youtube clean player"
+     href='javascript:void function () {const urlToPlayer={};urlToPlayer.youtube=function(location){const scan=location.search.match(/[&\/\?]v=([^&]*)/);const id=scan[1];return"https://youtube.com/embed/"+id};function openCleanWindow(url){window.open(url,"clean youtube player","resizable")}function createButton(){const menuId="menu-container";const button=document.createElement("button");button.textContent="clean window";button.onclick=(()=>{const url=urlToPlayer.youtube(location);openCleanWindow(url)});document.getElementById(menuId).appendChild(button)}openCleanWindow(urlToPlayer.youtube(location));}()'>
+   youtube clean player
+</a>
+</h2>
+
+<p>
+play youtube video in clean window,
+without locationbar, menubar, toolbar, statusbar.
+</p>
+
+<h2>
+  <a rel="sidebar"
+     title="bbsjs"
+     href='javascript:void function () {const output="bookmarklet";class FakePrint{constructor(string){if(string)this.data=string;else this.data=""}print(string){this.data+=string}println(string){this.print(string+"\n")}}class JavascriptEvalator{prompt(){const script=this.getScript();this.execute(script)}getArticle(){return $("#mainContainer").children().get().map(row=>$(row).text()).join("\n")}getScript(){const article=this.getArticle();const html=article.match(/<html[\S\s]*?<\/html>/);const script=article.match(/<script[\S\s]*?<\/script>/);return html||script}execute(script){return this.windowExecute(script)}evalExecute(script){const cleanScript=script.replace(/^<script[\S\s]*?>/,"").replace(/<\/script>$/,"");return eval(cleanScript)}windowExecute(script){const scriptWindow=window.open("about:blank");const scriptDocument=scriptWindow.document;scriptDocument.write(script);scriptDocument.close();return scriptWindow}}function promptJe(){const je=new JavascriptEvalator;je.prompt()}function registJe(listen){window.addEventListener("keydown",down=>{if(listen(down)){try{promptJe()}catch(evalError){throw evalError}}})}switch(output){case"hello world":alert("hello world!");break;case"bookmarklet":promptJe();break;case"user.js":registJe(keydown=>keydown.key=="J");break}}()'>
+      bbsjs
+  </a>
+</h2>
+
+<p>run bbsjs in ptt chrome or https://term.ptt.cc</p>
+
+<h2>
+  <a rel="sidebar"
+     title="hello world"
+     href='javascript:void function () {const output="hello world";class FakePrint{constructor(string){if(string)this.data=string;else this.data=""}print(string){this.data+=string}println(string){this.print(string+"\n")}}class JavascriptEvalator{prompt(){const scriptList=this.getScriptList();this.execute(scriptList[0])}getArticle(){return $("#mainContainer").children().get().map(row=>$(row).text()).join("\n")}getScriptList(){const article=this.getArticle();return article.match(/<script[\S\s]*?<\/script>/g)}execute(script){return this.windowExecute(script)}evalExecute(script){const cleanScript=script.replace(/^<script[\S\s]*?>/,"").replace(/<\/script>$/,"");return eval(cleanScript)}windowExecute(script){const scriptWindow=window.open("about:blank");const scriptDocument=scriptWindow.document;scriptDocument.write(script);scriptDocument.close();return scriptWindow}}function promptJe(){const je=new JavascriptEvalator;je.prompt()}function registJe(listen){window.addEventListener("keydown",down=>{if(listen(down)){try{promptJe()}catch(evalError){throw evalError}}})}switch(output){case"hello world":alert("hello world!");break;case"bookmarklet":promptJe();break;case"user.js":registJe(keydown=>keydown.key=="J");break}}()'>
+    hello world
+  </a>
+</h2>
+
+     
+
+<h2>
+  <a href='javascript:void function () {const map={};map.set=function(alias,url,name){this[alias]={url:url,name:name}};map.createForm=function(key){const form=document.createElement("form");const search=this[key];form.action=search.url;form.target="_blank";const input=document.createElement("input");input.name=search.name;form.appendChild(input);return form};map.search=function(key,string){const form=this.createForm(key);form.querySelector("input").value=string;document.documentElement.appendChild(form);form.submit()};map.set("pttpedia","http://zh.pttpedia.wikia.com/wiki/特殊:搜索","query");function promptSearch(string){if(!string)string=prompt("custom search");const scan=string.match(/([^\s]+)\s(.*)$/);const key=scan[1];const value=scan[2];map.search(key,value)}promptSearch();}()'>
+  custom search
+  </a>
+</h2>
