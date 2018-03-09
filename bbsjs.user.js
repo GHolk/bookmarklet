@@ -3,7 +3,9 @@
 // @namespace  http://gholk.github.io/
 // @description  press J in term.ptt.cc can run JavaScript
 // @match https://term.ptt.cc/*
-// @version  5
+// @match https://www.clam.ml/*
+// @match https://www.ptt.cc/bbs/*
+// @version  8
 // @grant  none
 // ==/UserScript==
 
@@ -51,7 +53,7 @@ class JavascriptEvalator {
         return html || script
     }
     execute(script) {
-        return this.windowExecute(script)
+        return this.iframeExecute(script)
     }
     evalExecute(script) {
         const cleanScript = script
@@ -65,6 +67,13 @@ class JavascriptEvalator {
         scriptDocument.write(script)
         scriptDocument.close()
         return scriptWindow
+    }
+    iframeExecute(script) {
+        const iframe = $('#bbsjs-frame').get(0) ||
+            $('<iframe id="bbsjs-frame">').appendTo('body').get(0)
+        iframe.contentDocument.write(script)
+        iframe.contentDocument.close()
+        return iframe
     }
 }
 
@@ -85,7 +94,9 @@ function registJe(listen) {
         }
     })
 }
-    
+
+addBbsFrameStyle()
+
 switch (output) {
 case 'hello world':
     alert('hello world!')
@@ -96,4 +107,31 @@ case 'bookmarklet':
 case 'user.js':
     registJe((keydown) => keydown.key == 'J')
     break
+}
+
+function addBbsFrameStyle() {
+    let style = $('#bbsjs-style').get(0)
+    if (style) return style
+    else {
+        const CssText = `
+#bbsjs-frame {
+  width: 40%;
+  height: 30em;
+  display: block;
+  position: relative;
+  background-color: white;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+#BBSWindow:hover ~ #bbsjs-frame {
+  left: -30%;
+}
+`
+        const $style = $('<style id="bbsjs-style">')
+        $style.text(CssText)
+        $style.appendTo('body')
+        style = $style.get(0)
+        return style
+    }
 }
