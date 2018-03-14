@@ -5,7 +5,7 @@
 // @match https://term.ptt.cc/*
 // @match https://www.clam.ml/*
 // @match https://www.ptt.cc/bbs/*
-// @version  8
+// @version  9
 // @grant  none
 // ==/UserScript==
 
@@ -69,8 +69,8 @@ class JavascriptEvalator {
         return scriptWindow
     }
     iframeExecute(script) {
-        const iframe = $('#bbsjs-frame').get(0) ||
-            $('<iframe id="bbsjs-frame">').appendTo('body').get(0)
+        $('#bbsjs-container').addClass('show')
+        const iframe = $('#bbsjs-container iframe').get(0)
         iframe.contentDocument.write(script)
         iframe.contentDocument.close()
         return iframe
@@ -95,7 +95,7 @@ function registJe(listen) {
     })
 }
 
-addBbsFrameStyle()
+if ($('#bbsjs-container').length == 0) initBbsjsFrame()
 
 switch (output) {
 case 'hello world':
@@ -109,29 +109,45 @@ case 'user.js':
     break
 }
 
-function addBbsFrameStyle() {
-    let style = $('#bbsjs-style').get(0)
-    if (style) return style
-    else {
-        const CssText = `
-#bbsjs-frame {
-  width: 40%;
-  height: 30em;
+function initBbsjsFrame() {
+    const $div = $('<div id="bbsjs-container">')
+    $('<button>').text('move').appendTo($div).click((click) => {
+        const $container = $(click.target).parent()
+        $container.toggleClass('show')
+    })
+    $div.append('<iframe>')
+    const cssText = `
+#bbsjs-container {
+  transition: 0.5s;
+  position: fixed;
+  top: 1em;
+  left: 1em;
+  z-index: 2;
+  background: white;
+}
+#bbsjs-container button {
+  float: right;
+  margin: 0.5em;
+  color: black;
+}
+#bbsjs-container iframe {
+  border: none;
+  display: none;
+}
+#bbsjs-container.show iframe {
+  clear: both;
   display: block;
-  position: relative;
-  background-color: white;
-  top: 0;
-  left: 0;
+  width: 100%;
+  height: 25em;
+}
+#bbsjs-container.show {
+  transition: 0.5s;
+  width: 40%;
+  top: 2em;
+  left: 30%;
   z-index: 2;
 }
-#BBSWindow:hover ~ #bbsjs-frame {
-  left: -30%;
-}
 `
-        const $style = $('<style id="bbsjs-style">')
-        $style.text(CssText)
-        $style.appendTo('body')
-        style = $style.get(0)
-        return style
-    }
+    $('<style>').text(cssText).appendTo($div)
+    $div.appendTo('body')
 }
