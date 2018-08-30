@@ -5,7 +5,7 @@
 // @match https://term.ptt.cc/*
 // @match https://www.clam.ml/*
 // @match https://www.ptt.cc/bbs/*
-// @version  9
+// @version  16
 // @grant  none
 // ==/UserScript==
 
@@ -13,20 +13,14 @@
 // const output = 'bookmarklet'
 const output = 'user.js'
 
-class FakePrint {
-    constructor(string) {
-        if (string) this.data = string
-        else this.data = ''
-    }
-    print(string) {
-        this.data += string
-    }
-    println(string) {
-        this.print(string + '\n')
-    }
-}
+let $
+if (window.$) $ = window.$
+else if (typeof unsafeWindow == 'object') $ = unsafeWindow.$
 
 class JavascriptEvalator {
+    constructor() {
+        assureBbsjsFrame()
+    }
     prompt() {
         const script = this.getScript()
         this.execute(script)
@@ -50,10 +44,20 @@ class JavascriptEvalator {
         const article = this.getArticle()
         const html = article.match(/<html[\S\s]*?<\/html>/)
         const script = article.match(/<script[\S\s]*?<\/script>/)
-        return html || script
+        if (html) return html[0]
+        else if (script) return script[0]
+        else throw new Error('no bbsjs script found')
     }
     execute(script) {
-        return this.iframeExecute(script)
+        return this.iframeObjectUrlExecute(script)
+    }
+    iframeObjectUrlExecute(script) {
+        const htmlHeader = {type: 'text/html'}
+        const scriptFile = new File([script], 'bbsjs-frame.html', htmlHeader)
+        const scriptUrl = URL.createObjectURL(scriptFile)
+        $('#bbsjs-container iframe').attr('src', scriptUrl)
+        URL.revokeObjectURL(scriptFile)
+        $('#bbsjs-container').addClass('show')
     }
     evalExecute(script) {
         const cleanScript = script
@@ -88,14 +92,14 @@ function registJe(listen) {
             try {
                 promptJe()
             }
-            catch (evalError) {
-                throw evalError
+            catch (bbsjsError) {
+                console.error(bbsjsError)
             }
         }
     })
 }
 
-if ($('#bbsjs-container').length == 0) initBbsjsFrame()
+
 
 switch (output) {
 case 'hello world':
@@ -109,13 +113,31 @@ case 'user.js':
     break
 }
 
+assureBbsjsFrame()
+
+function assureBbsjsFrame() {
+    if ($('#bbsjs-container').length == 0) initBbsjsFrame()
+}
+
 function initBbsjsFrame() {
-    const $div = $('<div id="bbsjs-container">')
-    $('<button>').text('move').appendTo($div).click((click) => {
-        const $container = $(click.target).parent()
-        $container.toggleClass('show')
+    const $div = $('<div>').attr('id', 'bbsjs-container')
+    const homePageUrl = 'https://gholk.github.io/bbsjs.html'
+    const $button = $('<button>').text('move').appendTo($div)
+    window.addEventListener('click', (click) => {
+        const button = click.target
+        if (button.matches('#bbsjs-container button')) {
+            const container = button.parentNode
+            container.classList.toggle('show')
+        }
     })
-    $div.append('<iframe>')
+    $('<a>').text('help')
+        .attr('target', 'bbsjs-iframe')
+        .attr('href', homePageUrl)
+        .appendTo($div)
+    $('<iframe>')
+        .attr('name', 'bbsjs-iframe')
+        .attr('src', homePageUrl)
+        .appendTo($div)
     const cssText = `
 #bbsjs-container {
   transition: 0.5s;
@@ -125,20 +147,23 @@ function initBbsjsFrame() {
   z-index: 2;
   background: white;
 }
+#bbsjs-container * {
+  display: none;
+}
 #bbsjs-container button {
-  float: right;
+  display: inline;
   margin: 0.5em;
   color: black;
 }
-#bbsjs-container iframe {
-  border: none;
-  display: none;
-}
 #bbsjs-container.show iframe {
+  border: none;
   clear: both;
   display: block;
   width: 100%;
   height: 25em;
+}
+#bbsjs-container.show a {
+  display: inline;
 }
 #bbsjs-container.show {
   transition: 0.5s;
