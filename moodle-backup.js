@@ -45,71 +45,40 @@ class MoodleCrawler {
         for (const id of this.extractAllCourseId(document)) {
             const resource = await this.$fetchCourseResource(id)
             const title = this.extractTitle(resource)
+            await this.sleep()
             for (const file of this.extractAllFile(resource)) {
-                this.downloadBlob(file.url)
+                this.download(file.url)
                 await this.sleep()
             }
         }
         this.downloadDestruct()
     }
     downloadInit() {
-        const iframe = document.createElement('iframe')
-        iframe.name = 'moodle-crawler-download-frame'
-        iframe.style.display = 'none'
-        document.body.appendChild(iframe)
-        this.downloadFrame = iframe
-
         const anchor = document.createElement('a')
         anchor.id = 'moodle-crawler-download'
         anchor.setAttribute('download', '')
-        anchor.target = 'moodle-crawler-download-frame'
+        anchor.setAttribute('target', '_blank')
         document.body.appendChild(anchor)
         this.downloadNode = anchor
     }
-    async downloadBlob(url) {
-        const response = await this.fetch(url)
-        const disposition = response.headers.get('content-disposition')
-
-        // fetch api decode http header as ascii, convert to utf8
-        let filename = disposition.match(/filename="(.*)"/)[1]
-        filename = this.binaryStringToUtf8(filename)
-
-        const blob = await response.blob()
-        const file = new File([blob], filename)
-        const blobUrl = URL.createObjectURL(file)
-        this.download(blobUrl, filename)
-        this.sleep().then(() => URL.revokeObjectURL(file))
-    }
-    binaryStringToUtf8(raw) {
-        const u8 = this.binaryStringToUint8Array(raw)
-        return this.textDecoder.decode(u8)
-    }
-    binaryStringToUint8Array(raw) {
-        const rawLength = raw.length
-        const array = new Uint8Array(new ArrayBuffer(rawLength))
-        for (let i=0; i<rawLength; i++) {
-            array[i] = raw.charCodeAt(i)
-        }
-        return array
-    }
-    downloadPopup(url) {
-        return window.open(url)
-    }
-    download(url, name) {
+    download(url) {
         this.downloadNode.href = url
-        this.downloadNode.download = name
         this.downloadNode.click()
     }
     downloadDestruct() {
         this.downloadNode.remove()
         this.downloadNode = null
-
-        this.downloadFrame.remove()
-        this.downloadFrame = null
     }
     bookmarkletPrompt() {
-        this.sleepInterval = Number(prompt('download file interval second:'))
+        let second = prompt('download file interval second:')
+        this.assert(typeof second == 'string', 'user abrupt')
+        second = Number(second)
+        this.assert(second > 0, 'second should be positive')
+        this.sleepInterval = Number(second)
         this.run()
+    }
+    assert(test, errorMessage, CustomError = Error) {
+        if (!test) throw new CustomError(errorMessage)
     }
 }
 
