@@ -40,9 +40,29 @@ class MoodleCrawler {
     sleep(second = this.sleepInterval) {
         return new Promise(wake => setTimeout(wake, second*1000))
     }
+    getLastCourseId() {
+        return localStorage.getItem('moodle-backup-current-id')
+    }
+    setLastCourseId(id) {
+        localStorage.setItem('moodle-backup-current-id', id)
+    }
+    removeLastCourseId() {
+        localStorage.removeItem('moodle-backup-current-id')
+    }
     async run() {
         this.runInit()
+
+        let lastCourseId = this.getLastCourseId()
+        let alreadyDownload
+        if (lastCourseId) alreadyDownload = true
+        else alreadyDownload = false
+
         for (const id of this.extractAllCourseId(document)) {
+            if (alreadyDownload) {
+                if (lastCourseId == id) alreadyDownload = false
+                else continue
+            }
+            this.setLastCourseId(id)
             const resource = await this.$fetchCourseResource(id)
             const title = this.extractTitle(resource)
             await this.sleep()
@@ -51,6 +71,7 @@ class MoodleCrawler {
                 await this.sleep()
             }
         }
+        this.removeLastCourseId()
         this.runDestruct()
     }
     runInit() {
@@ -63,7 +84,6 @@ class MoodleCrawler {
     }
     downloadInit() {
         const anchor = document.createElement('a')
-        anchor.id = 'moodle-crawler-download'
         anchor.setAttribute('download', '')
         anchor.setAttribute('target', '_blank')
         document.body.appendChild(anchor)
@@ -86,13 +106,14 @@ class MoodleCrawler {
     preventExitDestruct() {
         window.onbeforeunload = null
     }
-    bookmarkletPrompt() {
+    async bookmarkletPrompt() {
         let second = prompt('download file interval second:')
         this.assert(typeof second == 'string', 'user abrupt')
         second = Number(second)
         this.assert(second > 0, 'second should be positive')
         this.sleepInterval = Number(second)
-        this.run()
+        await this.run()
+        alert('download finish')
     }
     assert(test, errorMessage, CustomError = Error) {
         if (!test) throw new CustomError(errorMessage)
