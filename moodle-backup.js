@@ -41,7 +41,7 @@ class MoodleCrawler {
         return new Promise(wake => setTimeout(wake, second*1000))
     }
     async run() {
-        this.downloadInit()
+        this.runInit()
         for (const id of this.extractAllCourseId(document)) {
             const resource = await this.$fetchCourseResource(id)
             const title = this.extractTitle(resource)
@@ -51,7 +51,15 @@ class MoodleCrawler {
                 await this.sleep()
             }
         }
+        this.runDestruct()
+    }
+    runInit() {
+        this.downloadInit()
+        this.preventExitInit()
+    }
+    runDestruct() {
         this.downloadDestruct()
+        this.preventExitDestruct()
     }
     downloadInit() {
         const anchor = document.createElement('a')
@@ -68,6 +76,15 @@ class MoodleCrawler {
     downloadDestruct() {
         this.downloadNode.remove()
         this.downloadNode = null
+    }
+    preventExitInit() {
+        window.onbeforeunload = this.preventExit
+    }
+    preventExit(closeEvent) {
+        return 'moodle backup is not finish, do you want to exit?'
+    }
+    preventExitDestruct() {
+        window.onbeforeunload = null
     }
     bookmarkletPrompt() {
         let second = prompt('download file interval second:')
