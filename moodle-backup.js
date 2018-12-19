@@ -22,15 +22,47 @@ class MoodleCrawler {
         }
     }
     extractTitle(document) {
-        return document.getElementById('logobox').textContent
+        return document.getElementById('logobox').textContent.trim()
+    }
+    *extractFolder(url) {
+        const folder = this.$fetch(url)
+        const fileList = folder.then(dom => {
+            return dom.querySelectorAll('.fp-filename-icon a')
+        })
+        let finish = false
+        let index = 0
+        while (!finish) {
+            yield fileList.then(anchorList => {
+                let anchor = null
+                if (index < anchorList.length) {
+                    anchor = anchorList[index]
+                    index++
+                }
+                if (index >= anchorList.length) finish = true
+                return {url: anchor.href}
+            })
+        }
+    }
+    *extractByType(tr) {
+        const url = tr.querySelector('a').href
+        let description = tr.querySelector('td:last-child').textContent
+        description = description.trim()
+        if (url.includes('/mod/resource/view.php')) {
+            yield {url,description}
+        }
+        else if (url.includes('/mod/folder/view.php')) {
+            yield* this.extractFolder(url)
+        }
+        else if (url.includes('/mod/page/view.php') ||
+                 url.includes('/mod/url/view.php')) {
+            yield {url, description}
+        }
+        else console.error(`unknown file type: ${url}`)
     }
     *extractAllFile(document) {
         const tableRowNonEmptySelector = '#region-main-box tr[class]'
         for (const tr of document.querySelectorAll(tableRowNonEmptySelector)) {
-            const url = tr.querySelector('a').href
-            let description = tr.querySelector('td:last-child').textContent
-            description = description.trim()
-            yield {url, description}
+            yield* this.extractByType(tr)
         }
     }
     async $fetchCourseResource(id) {
@@ -66,9 +98,12 @@ class MoodleCrawler {
             const resource = await this.$fetchCourseResource(id)
             const title = this.extractTitle(resource)
             await this.sleep()
-            for (const file of this.extractAllFile(resource)) {
-                this.download(file.url)
-                await this.sleep()
+            for (let file of this.extractAllFile(resource)) {
+                if (file && file.then) file = await file
+                if (file) {
+                    this.download(file.url)
+                    await this.sleep()
+                }
             }
         }
         this.removeLastCourseId()
@@ -82,9 +117,12 @@ class MoodleCrawler {
         this.downloadDestruct()
         this.preventExitDestruct()
     }
+    isFirefox() {
+        return navigator.userAgent.match(/firefox/i)
+    }
     downloadInit() {
         const anchor = document.createElement('a')
-        anchor.setAttribute('download', '')
+        if (!this.isFirefox()) anchor.setAttribute('download', '')
         anchor.setAttribute('target', '_blank')
         document.body.appendChild(anchor)
         this.downloadNode = anchor
@@ -120,6 +158,18 @@ class MoodleCrawler {
     }
 }
 
+class MoodleCrawlerDebug extends MoodleCrawler {
+    constructor() {
+        super()
+        this.sleepInterval = 0.5
+    }
+    extractTitle(document) {
+        const title = super.extractTitle(document)
+        this.currentCourseTitle = title
+    }
+    download(url) {
+        console.log(this.currentCourseTitle, url)
+    }
+}
 const moodleCrawler = new MoodleCrawler()
 moodleCrawler.bookmarkletPrompt()
-
