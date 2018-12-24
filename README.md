@@ -8,6 +8,8 @@
 長按標題的小書籤超連結，拖曳到書籤列即安裝完成；
 點擊書籤列中的小書籤即可在當下頁面中執行。
 
+![drag bookmarklet vedio](bookmarklet-add.gif)
+
 <h2>
 <a title="play youtube video in clean browser window"
    href='javascript:void function () {const urlToPlayer={};urlToPlayer.youtube=function(location){const scan=location.search.match(/[&\/\?]v=([^&]*)/);const id=scan[1];return"https://youtube.com/embed/"+id};function openCleanWindow(url){window.open(url,"clean youtube player","resizable")}function createButton(){const menuId="menu-container";const button=document.createElement("button");button.textContent="clean window";button.onclick=(()=>{const url=urlToPlayer.youtube(location);openCleanWindow(url)});document.getElementById(menuId).appendChild(button)}openCleanWindow(urlToPlayer.youtube(location));}()'>
