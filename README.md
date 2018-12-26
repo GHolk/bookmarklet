@@ -37,7 +37,7 @@ redirector anchor url translator</a>
 this bookmarklet will generate QR code image of current url,
 and open in the new tab.
 
-[url qrcode]: javascript:void%20function%20()%20%7Bconst%20url=window.location.href;const%20qrcodeUrl=%60chart.googleapis.com/chart?chs=150x150&cht=qr&chl=$%7Burl%7D%60;window.open(qrcodeUrl);%7D() "generate QR code image of current url"
+[url qrcode]: javascript:void%20function%20()%20%7Bconst%20url=window.location.href;const%20qrcodeUrl=%60http://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=$%7Burl%7D%60;window.open(qrcodeUrl);%7D() "generate QR code image of current url"
 
 
 ## [moodle backup]
