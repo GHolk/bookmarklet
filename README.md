@@ -48,6 +48,11 @@ and open in the new tab.
 這個小書籤可以強制允許右鍵與選取文字，
 但不處理禁用 f12 或 ctrl-c 的網頁。
 
+## [hackmd scroll flip]
+make mouse scroll flip page in hackmd slide mode.
+title is bookmarklet, below is grease monkey user.js:
+[hackmd scroll flip user.js] .
+
 ## [moodle backup]
 在 [成功大學的 moodle][moodle.ncku] 首頁登入後，
 點擊該書籤，能自動下載所有課程中教授上傳的講義。
@@ -83,3 +88,6 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 [facebook video rotate]: javascript:void%20function%20()%20%7Bdocument.querySelectorAll(%22div%5Brole=presentation%5D%22).forEach(present=%3E%7Bconst%20container=present.parentNode;if(container.querySelector(%22video%22))%7Bconsole.log(%22get%20video%22,container);const%20ratioOrigin=getRotateRatio(container.style.transform);const%20ratioNext=ratioOrigin-.25;container.style.transform=%60rotate($%7BratioNext%7Dturn)%60%7D%7D);function%20getRotateRatio(cssString)%7Bconst%20scan=cssString.match(/rotate%5C((-?%5Cd+(%5C.%5Cd+)?)turn%5C)/);if(scan)%7Bconst%20ratio=Number(scan%5B1%5D);return%20ratio%7Delse%20return%200%7D%7D() "rotate facebook float video window 90°"
 
 [enable select contextmenu]: javascript:void%20function%20()%20%7Bfunction%20stopEvent(event)%7Bevent.stopImmediatePropagation()%7Dconst%20registFirst=%7Bcapture:true%7D;window.addEventListener(%22contextmenu%22,stopEvent,registFirst);document.addEventListener(%22mousedown%22,stopEvent,registFirst);%7D() "force enable right click (context menu) and text selection"
+
+[hackmd scroll flip]: javascript:void%20function%20()%20%7Bif(document.querySelector(%22.reveal%20.slides%22))%7Bconst%20option=%7B%7D;option.pageup=%7BcharCode:0,keyCode:33,altKey:!1,ctrlKey:!1,shiftKey:!1,metaKey:!1,repeat:!1,isComposing:!1,key:%22PageUp%22,code:%22PageUp%22,type:%22keydown%22,composed:!0%7D,option.pagedown=%7BcharCode:0,keyCode:34,altKey:!1,ctrlKey:!1,shiftKey:!1,metaKey:!1,repeat:!1,isComposing:!1,key:%22PageDown%22,code:%22PageDown%22,type:%22keydown%22,composed:!0%7D,window.addEventListener(%22wheel%22,function(scroll)%7Bscroll.preventDefault();let%20keyOption;keyOption=scroll.deltaY%3E0?option.pagedown:option.pageup;const%20key=new%20KeyboardEvent(%22keydown%22,keyOption);document.dispatchEvent(key)%7D,%7Bpassive:!1%7D)%7D%7D() "make mouse scroll flip page in hackmd slide mode"
+[hackmd scroll flip user.js]: https://gist.github.com/GHolk/4a2edcf9cf3f956ec7eb7d7823348b6c/raw/1c71ecd469701cfadf149d9687a785c5294191ef/hackmd-scroll-flip.user.js
