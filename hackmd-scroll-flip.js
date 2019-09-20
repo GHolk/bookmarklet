@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name hackmd scroll flip
 // @namespace http://gholk.github.io/
-// @version 7
+// @version 8
 // @description make mouse scroll flip page in hackmd slide mode.
 // @match https://hackmd.io/*/*
 // @grant unsafeWindow
@@ -9,7 +9,7 @@
 
 if (document.querySelector('.reveal .slides')) {
     const Reveal = unsafeWindow.Reveal
-    window.addEventListener(
+    document.querySelector('.reveal').addEventListener(
         'wheel',
         function (scroll) {
             scroll.preventDefault()
