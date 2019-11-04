@@ -40,7 +40,7 @@ then
     file="$1"
     shift
     case "$file" in
-        *.js) letify "$1" | encode_js_url ;;
+        *.js) letify "$file" | encode_js_url ;;
         *.html|*.htm) encode_data_url < "$file" | tr -d '\n' ;;
     esac
 else
