@@ -95,7 +95,7 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 ## [e3 new grade]
 一次將全班的成績全部輸入進交通大學 new e3 教學網站中的評分表格。
 
- 1. 進成課程 > 成績管理 > 編輯成績，
+ 1. 進入課程 > 成績管理 > 編輯成績，
     網址應該是類似 <https://e3new.nctu.edu.tw/theme/dcpc/grade/report/grader/editgrade.php?id=5566&edit=1> ，
     其中 `id=5566` 換成該課程的 id。
 
