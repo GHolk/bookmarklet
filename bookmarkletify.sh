@@ -8,7 +8,7 @@ letify() {
     echo '}()'
 }
 
-encode_url() {
+encode_js_url() {
     echo -n javascript:
     node -p 'encodeURIComponent(process.argv[1])' -- "$(cat)"
 }
@@ -24,13 +24,25 @@ usage
 HELP
 }
 
+encode_data_url() {
+    echo -n 'data:text/html;base64,'
+    base64
+}
+
+
 if [ $# -eq 1 ]
 then
     letify "$1"
 elif [ "$1" = to-url ]
 then
     shift
-    letify "$1" | encode_url
+
+    file="$1"
+    shift
+    case "$file" in
+        *.js) letify "$1" | encode_js_url ;;
+        *.html|*.htm) encode_data_url < "$file" | tr -d '\n' ;;
+    esac
 else
     echo -n unknown option:
     printf ' "%s"' "$@"
