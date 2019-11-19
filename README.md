@@ -1,14 +1,27 @@
 <meta charset="UTF-8">
 
-<a href="//gholk.github.io/bookmarklet">
-  get bookmarklet in this page
-</a>
+[get bookmarklet in this page](//gholk.github.io/bookmarklet)
+
+<style>
+a[href="//gholk.github.io/bookmarklet"] {
+  display: none; /* only show link in github repo readme page */
+}
+</style>
 
 ## 小書籤安裝方法
 長按標題的小書籤超連結，拖曳到書籤列即安裝完成；
 點擊書籤列中的小書籤即可在當下頁面中執行。
 
 ![drag bookmarklet vedio](bookmarklet-add.gif)
+
+<style>
+img[alt="drag bookmarklet vedio"] {
+  display: block;
+  margin: auto; /* align center */
+  border: solid 1px;
+  height: 15em;
+}
+</style>
 
 <h2>
 <a title="play youtube video in clean browser window"
