@@ -1,10 +1,13 @@
 <meta charset="UTF-8">
 
-[get bookmarklet in this page](//gholk.github.io/bookmarklet)
+because github disable bookmarklet in
+README.md in github repository page, please go to
+[github page of this repository](//gholk.github.io/bookmarklet)
+to use drag drop add bookmarklet.
 
 <style>
-a[href="//gholk.github.io/bookmarklet"] {
-  display: none; /* only show link in github repo readme page */
+meta[charset] + p {
+  display: none; /* only show redirect info in github repo readme page */
 }
 </style>
 
