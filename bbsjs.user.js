@@ -1,21 +1,15 @@
 // ==UserScript==
 // @name  chrome bbs javascript executor
 // @namespace  http://gholk.github.io/
-// @description  press J in term.ptt.cc can run JavaScript
+// @description  press J in term.ptt.cc to run JavaScript
 // @match https://term.ptt.cc/*
 // @match https://www.clam.ml/*
 // @match https://www.ptt.cc/bbs/*
-// @version  16
+// @version  17
 // @grant  none
 // ==/UserScript==
 
-// const output = 'hello world'
-// const output = 'bookmarklet'
-const output = 'user.js'
-
-let $
-if (window.$) $ = window.$
-else if (typeof unsafeWindow == 'object') $ = unsafeWindow.$
+const $ = e => document.querySelector(e)
 
 class JavascriptEvalator {
     constructor() {
@@ -32,12 +26,11 @@ class JavascriptEvalator {
         else return this.getPttChromeArticle()
     }
     getPttWebArticle() {
-        return $('#main-container').text()
+        return $('#main-container').textContent
     }
     getPttChromeArticle() {
-        return $('#mainContainer')
-            .children().get()
-            .map(row => $(row).text())
+        return Array.from($('#mainContainer').children)
+            .map(row => row.textContent)
             .join('\n')
     }
     getScript() {
@@ -55,9 +48,9 @@ class JavascriptEvalator {
         const htmlHeader = {type: 'text/html'}
         const scriptFile = new File([script], 'bbsjs-frame.html', htmlHeader)
         const scriptUrl = URL.createObjectURL(scriptFile)
-        $('#bbsjs-container iframe').attr('src', scriptUrl)
+        $('#bbsjs-container iframe').src = scriptUrl
         URL.revokeObjectURL(scriptFile)
-        $('#bbsjs-container').addClass('show')
+        $('#bbsjs-container').classList.add('show')
     }
     evalExecute(script) {
         const cleanScript = script
@@ -73,8 +66,8 @@ class JavascriptEvalator {
         return scriptWindow
     }
     iframeExecute(script) {
-        $('#bbsjs-container').addClass('show')
-        const iframe = $('#bbsjs-container iframe').get(0)
+        $('#bbsjs-container').classList.add('show')
+        const iframe = $('#bbsjs-container iframe')
         iframe.contentDocument.write(script)
         iframe.contentDocument.close()
         return iframe
@@ -101,44 +94,27 @@ function registJe(listen) {
 
 
 
-switch (output) {
-case 'hello world':
-    alert('hello world!')
-    break
-case 'bookmarklet':
-    promptJe()
-    break
-case 'user.js':
-    registJe((keydown) => keydown.key == 'J')
-    break
-}
+if (typeof GM != 'undefined') registJe((keydown) => keydown.key == 'J')
+else promptJe()
 
 assureBbsjsFrame()
 
 function assureBbsjsFrame() {
-    if ($('#bbsjs-container').length == 0) initBbsjsFrame()
+    if (!$('#bbsjs-container')) initBbsjsFrame()
 }
 
 function initBbsjsFrame() {
-    const $div = $('<div>').attr('id', 'bbsjs-container')
+    const div = document.createElement('div')
+    div.id = 'bbsjs-container'
+    //$('<div>').attr('id', 'bbsjs-container')
     const homePageUrl = 'https://gholk.github.io/bbsjs.html'
-    const $button = $('<button>').text('move').appendTo($div)
-    window.addEventListener('click', (click) => {
-        const button = click.target
-        if (button.matches('#bbsjs-container button')) {
-            const container = button.parentNode
-            container.classList.toggle('show')
-        }
-    })
-    $('<a>').text('help')
-        .attr('target', 'bbsjs-iframe')
-        .attr('href', homePageUrl)
-        .appendTo($div)
-    $('<iframe>')
-        .attr('name', 'bbsjs-iframe')
-        .attr('src', homePageUrl)
-        .appendTo($div)
-    const cssText = `
+    div.innerHTML = `
+<button>move</button>
+<button>execute</button>
+<a href="${homePageUrl}" target="bbsjs-iframe">help</a>
+<iframe name="bbsjs-iframe" src="${homePageUrl}"></iframe>
+<style>
+
 #bbsjs-container {
   transition: 0.5s;
   position: fixed;
@@ -172,7 +148,25 @@ function initBbsjsFrame() {
   left: 30%;
   z-index: 2;
 }
+</style>
 `
-    $('<style>').text(cssText).appendTo($div)
-    $div.appendTo('body')
+    // todo: prevent mouse browse event
+    window.addEventListener('click', (click) => {
+        const button = click.target
+        if (!button.matches('#bbsjs-container button')) return
+
+        if (button.textContent == 'move') {
+            const container = button.parentNode
+            container.classList.toggle('show')
+        }
+        else if (button.textContent == 'execute') {
+            try {
+                promptJe()
+            }
+            catch (bbsjsError) {
+                console.error(bbsjsError)
+            }
+        }
+    })
+    document.body.append(div)
 }
