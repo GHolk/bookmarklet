@@ -1,6 +1,9 @@
 # gholk's bookmarklet
 <meta charset="UTF-8">
 
+<link rel="alternate" type="application/atom+xml"
+      href="https://github.com/GHolk/bookmarklet/commits/master.atom">
+
 if you are in github.com,
 please go to
 [github page of this repository](//gholk.github.io/bookmarklet)
@@ -23,6 +26,13 @@ img[alt="drag bookmarklet vedio"] {
   height: 15em;
 }
 </style>
+
+## 訂閱
+懶得做 rss，請直接訂閱 [github 自動依 git 歷史產生的 rss][github rss] ，
+或直接 watch [github repository] 用 email 收 github 通知。
+
+[github rss]: https://github.com/GHolk/bookmarklet/commits/master.atom
+[github repository]: https://github.com/GHolk/bookmarklet
 
 ## [youtube clean player]
 play youtube video in clean window,
@@ -119,7 +129,7 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
 此為小書籤版本，在含有上傳檔案的表單欄位 `<input type="file">`
 的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
-將剪貼簿中的檔案貼到表單中。
+將剪貼簿中的檔案，例如在網頁上右鍵複製的圖片，直接貼到表單中。
 如果網頁中含有多於一個的允許貼上檔案的表單，
 則會貼上到網頁中第一個表單。
 

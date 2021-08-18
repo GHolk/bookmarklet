@@ -19,6 +19,6 @@ README.md.ref: README.md.body *.bookmarklet.js *.user.js $(html_bookmarklet)
 	sh bookmarkletify.sh reference $< > $@
 
 index.html: README.md
-	marked $<
+	(echo '<!DOCTYPE html><html>'; marked $<; echo '</html>') > $@
 
 .PHONY: all
