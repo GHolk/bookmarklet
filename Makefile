@@ -21,4 +21,7 @@ README.md.ref: README.md.body *.bookmarklet.js *.user.js $(html_bookmarklet)
 index.html: README.md
 	(echo '<!DOCTYPE html><html>'; marked $<; echo '</html>') > $@
 
-.PHONY: all
+clean:
+	rm -rf README.md README.md.ref index.html *.bookmarklet.js
+
+.PHONY: all clean
