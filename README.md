@@ -1,16 +1,13 @@
 # gholk's bookmarklet
 <meta charset="UTF-8">
 
-because github disable bookmarklet in
-README.md in github repository page, please go to
+if you are in github.com,
+please go to
 [github page of this repository](//gholk.github.io/bookmarklet)
-to use drag drop to add bookmarklet.
-
-<style>
-meta[charset] + p {
-  display: none; /* only show redirect info in github repo readme page */
-}
-</style>
+or [index.html](index.html)
+to use drag drop to add bookmarklet,
+because github disable bookmarklet in
+README.md in github repository page.
 
 ## 小書籤安裝方法
 長按標題的小書籤超連結，拖曳到書籤列即安裝完成；
@@ -30,7 +27,6 @@ img[alt="drag bookmarklet vedio"] {
 ## [youtube clean player]
 play youtube video in clean window,
 without locationbar, menubar, toolbar, statusbar.
-
 
 ## [custom search]
 
