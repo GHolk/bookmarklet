@@ -1,0 +1,139 @@
+# gholk's bookmarklet
+<meta charset="UTF-8">
+
+because github disable bookmarklet in
+README.md in github repository page, please go to
+[github page of this repository](//gholk.github.io/bookmarklet)
+to use drag drop to add bookmarklet.
+
+<style>
+meta[charset] + p {
+  display: none; /* only show redirect info in github repo readme page */
+}
+</style>
+
+## 小書籤安裝方法
+長按標題的小書籤超連結，拖曳到書籤列即安裝完成；
+點擊書籤列中的小書籤即可在當下頁面中執行。
+
+![drag bookmarklet vedio](bookmarklet-add.gif)
+
+<style>
+img[alt="drag bookmarklet vedio"] {
+  display: block;
+  margin: auto; /* align center */
+  border: solid 1px;
+  height: 15em;
+}
+</style>
+
+## [youtube clean player]
+play youtube video in clean window,
+without locationbar, menubar, toolbar, statusbar.
+
+
+## [custom search]
+
+## [jumper translator]
+redirector anchor url translator
+
+## [generate url qrcode]
+this bookmarklet will generate QR code image of current url,
+and open in the new tab.
+
+## [facebook video rotate]
+逆時針方向旋轉方向錯誤的 facebook 浮動影片視窗 90° 。
+
+## [enable select contextmenu]
+取消網頁中禁用右鍵與防止選取文字的功能。
+有些網頁會禁止反白選取文字，或是禁止右鍵，
+這個小書籤可以強制允許右鍵與選取文字，
+但不處理禁用 f12 或 ctrl-c 的網頁。
+
+## [hackmd scroll flip]
+make mouse scroll flip page in hackmd slide mode.
+title is bookmarklet, below is grease monkey user.js:
+[hackmd scroll flip user.js] .
+
+## [moodle backup]
+在 [成功大學的 moodle][moodle.ncku] 首頁登入後，
+點擊該書籤，能自動下載所有課程中教授上傳的講義。
+畢竟 moodle 上的資料不會永遠留著，
+畢業後還是下載到自己電腦裡比較安心。
+
+事前建議先把瀏覽器對 pdf 檔的動作設成儲存而非開啟，
+firefox: *偏好設定 > 應用程式 > 搜尋 pdf > 動作 > 儲存檔案* ，
+chromium: *Settings > Privacy and security >
+Content settings > PDF documents > Download* 。
+另外 chromium 及 firefox 都建議設定預設下載的資料夾，
+基本上就能全部自動下載，不會彈對話框。
+有時一些檔案格式會無法直接下載，變成在新分頁開啟，
+只能再右鍵另存新檔。
+
+點擊書籤後會先彈出對話框要你輸入幾秒下載一個檔案，
+建議是 1-3 秒，不要對計中的伺服器造成太大負擔；
+輸入後就會開始一一下載。
+如果要暫停或中斷，直接關掉分頁時會詢問是否要離開，
+同時也會暫停不再下載新檔案。
+若選擇停留就會繼續下載新檔案，確定離開就不會再下載新檔案；
+下次再執行時會自動從上次下載到一半的課程繼續下載。
+
+firefox 有個 bug，如果下載的檔案是純文字檔 txt，
+會無法下載只會直接打開；
+所以 firefox 的使用者我改用在新分頁開啟的形式，
+防止原本 moodle 的頁面被結束掉。
+chrome 好像會跳出大量下載的警告，記得勾允許。
+
+[moodle.ncku]: https://moodle.ncku.edu.tw
+
+## [screen message]
+用螢幕展示大字報。
+
+原來是 debian 上的套件 screen message，有人重寫成網頁版本。
+可以在瀏覽器中按 F11 進入全螢幕模式。
+
+我是包成 data url 的形式，
+但在 anchor 裡直接放 data url 好像不能直接點擊開啟。
+但拖曳到書籤或右鍵加入書籤後，點擊還是可以運作。
+
+## [e3new grade]
+一次將全班的成績全部輸入進交通大學 new e3 教學網站中的評分表格。
+
+ 1. 進入課程 > 成績管理 > 編輯成績，
+    網址應該是類似 <https://e3new.nctu.edu.tw/theme/dcpc/grade/report/grader/editgrade.php?id=5566&edit=1> ，
+    其中 `id=5566` 換成該課程的 id。
+
+ 2. 點擊 *e3 new grade* 小書籤，
+    會彈出視窗提示使用者點擊要輸入的欄。
+    按 ok 後，在要評分的欄的任一學生的成績輸入框中點一下。
+ 
+ 3. 會再彈出一個輸入框要求輸入全班的成績，
+    請把全班的成績以一行一個分數，
+    或用空白分隔也可以，複製後貼到輸入框中，再按確定。
+ 
+ 4. 輸入的成績即會依順序填入該欄中的每個輸入框中。
+
+## [e3new entitle]
+讓 e3 new 的網頁標題顯示課程名稱、分頁名稱等資訊，
+這樣就可以用瀏覽器的網址列搜尋快速找到某堂課的頁面。
+
+[e3 new entitle]: e3new-entitle.user.js
+
+## [paste to form file 小書籤版][paste-to-form-file.user.js]
+讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
+此為小書籤版本，在含有上傳檔案的表單欄位 `<input type="file">`
+的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
+將剪貼簿中的檔案貼到表單中。
+如果網頁中含有多於一個的允許貼上檔案的表單，
+則會貼上到網頁中第一個表單。
+
+## [paste to form file 油猴腳本][paste-to-form-file.bookmarklet.js]
+同上功能，但是油猴腳本 user.js 的版本，
+好處是可以直接在指定的網址下執行，不用特別打開書籤欄執行小書籤。
+預設本腳本只會在 [google 以圖搜圖的頁面][google image] 啟用，
+如果希望在其它常造訪的網站上啟用，請在油猴腳本選單中自行設定：
+選單 (menu) > paste to form file >
+使用者指令稿選項 (user script options) >
+使用者包含 (include) 或使用者符合 (match) 。
+
+[google image]: http://www.google.com/imghp
