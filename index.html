@@ -1,5 +1,9 @@
+<!DOCTYPE html><html>
 <h1 id="gholk&#39;s-bookmarklet">gholk&#39;s bookmarklet</h1>
 <meta charset="UTF-8">
+
+<link rel="alternate" type="application/atom+xml"
+      href="https://github.com/GHolk/bookmarklet/commits/master.atom">
 
 <p>if you are in github.com,
 please go to
@@ -21,6 +25,9 @@ img[alt="drag bookmarklet vedio"] {
 }
 </style>
 
+<h2 id="訂閱">訂閱</h2>
+<p>懶得做 rss，請直接訂閱 <a href="https://github.com/GHolk/bookmarklet/commits/master.atom">github 自動依 git 歷史產生的 rss</a> ，
+或直接 watch <a href="https://github.com/GHolk/bookmarklet">github repository</a> 用 email 收 github 通知。</p>
 <h2 id="[youtube-clean-player]"><a href="javascript:void%20function%20()%20%7Bconst%20urlToPlayer%3D%7B%7D%3BurlToPlayer.youtube%3Dfunction(location)%7Bconst%20scan%3Dlocation.search.match(%2F%5B%26%5C%2F%5C%3F%5Dv%3D(%5B%5E%26%5D*)%2F)%3Bconst%20id%3Dscan%5B1%5D%3Breturn%22https%3A%2F%2Fyoutube.com%2Fembed%2F%22%2Bid%7D%3Bfunction%20openCleanWindow(url)%7Bwindow.open(url%2C%22clean%20youtube%20player%22%2C%22resizable%22)%7Dfunction%20createButton()%7Bconst%20menuId%3D%22menu-container%22%3Bconst%20button%3Ddocument.createElement(%22button%22)%3Bbutton.textContent%3D%22clean%20window%22%3Bbutton.onclick%3D(()%3D%3E%7Bconst%20url%3DurlToPlayer.youtube(location)%3BopenCleanWindow(url)%7D)%3Bdocument.getElementById(menuId).appendChild(button)%7DopenCleanWindow(urlToPlayer.youtube(location))%3B%7D()">youtube clean player</a></h2>
 <p>play youtube video in clean window,
 without locationbar, menubar, toolbar, statusbar.</p>
@@ -94,11 +101,11 @@ chrome 好像會跳出大量下載的警告，記得勾允許。</p>
 <h2 id="[e3new-entitle]"><a href="e3new-entitle.user.js">e3new entitle</a></h2>
 <p>讓 e3 new 的網頁標題顯示課程名稱、分頁名稱等資訊，
 這樣就可以用瀏覽器的網址列搜尋快速找到某堂課的頁面。</p>
-<h2 id="[paste-to-form-file-小書籤版][paste-to-form-file.bookmarklet.js]"><a href="javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconsole.debug(paste.clipboardData.files)%3Bconst%20input%3Ddocument.querySelector(&#39;input%5Btype%20%3D%20%22file%22%5D&#39;)%3Binput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()">paste to form file 小書籤版</a></h2>
+<h2 id="[paste-to-form-file-小書籤版][paste-to-form-file.bookmarklet.js]"><a href="javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconst%20input%3Ddocument.querySelector(&#39;input%5Btype%20%3D%20%22file%22%5D&#39;)%3Bif(!input)return%3Bconsole.debug(...paste.clipboardData.files)%2Cinput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()">paste to form file 小書籤版</a></h2>
 <p>讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
 此為小書籤版本，在含有上傳檔案的表單欄位 <code>&lt;input type=&quot;file&quot;&gt;</code>
 的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
-將剪貼簿中的檔案貼到表單中。
+將剪貼簿中的檔案，例如在網頁上右鍵複製的圖片，直接貼到表單中。
 如果網頁中含有多於一個的允許貼上檔案的表單，
 則會貼上到網頁中第一個表單。</p>
 <h2 id="[paste-to-form-file-油猴腳本][paste-to-form-file.user.js]"><a href="paste-to-form-file.user.js">paste to form file 油猴腳本</a></h2>
@@ -110,3 +117,4 @@ chrome 好像會跳出大量下載的警告，記得勾允許。</p>
 使用者指令稿選項 (user script options) &gt;
 使用者包含 (include) 或使用者符合 (match) 。</p>
 
+</html>

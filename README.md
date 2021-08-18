@@ -1,6 +1,9 @@
 # gholk's bookmarklet
 <meta charset="UTF-8">
 
+<link rel="alternate" type="application/atom+xml"
+      href="https://github.com/GHolk/bookmarklet/commits/master.atom">
+
 if you are in github.com,
 please go to
 [github page of this repository](//gholk.github.io/bookmarklet)
@@ -23,6 +26,13 @@ img[alt="drag bookmarklet vedio"] {
   height: 15em;
 }
 </style>
+
+## 訂閱
+懶得做 rss，請直接訂閱 [github 自動依 git 歷史產生的 rss][github rss] ，
+或直接 watch [github repository] 用 email 收 github 通知。
+
+[github rss]: https://github.com/GHolk/bookmarklet/commits/master.atom
+[github repository]: https://github.com/GHolk/bookmarklet
 
 ## [youtube clean player]
 play youtube video in clean window,
@@ -119,7 +129,7 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
 此為小書籤版本，在含有上傳檔案的表單欄位 `<input type="file">`
 的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
-將剪貼簿中的檔案貼到表單中。
+將剪貼簿中的檔案，例如在網頁上右鍵複製的圖片，直接貼到表單中。
 如果網頁中含有多於一個的允許貼上檔案的表單，
 則會貼上到網頁中第一個表單。
 
@@ -153,6 +163,6 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 [e3new grade]: javascript:void%20function%20()%20%7Bfunction%20userClick()%7Breturn%20alert(%22please%20click%20the%20column%20you%20want%20to%20grade%22)%2Cnew%20Promise(resolve%3D%3E%7Bwindow.addEventListener(%22click%22%2Cclick%3D%3Eresolve(click.target)%2C%7Bonce%3A!0%7D)%7D)%7Dfunction%20findAcient(node%2CtestSelector)%7Blet%20test%3Bfor(test%3D%22string%22%3D%3Dtypeof%20testSelector%3Fnode%3D%3Enode.matches(testSelector)%3AtestSelector%3Bnode%3B)%7Bif(test(node))return%20node%3Bnode%3Dnode.parentNode%7Dreturn%20null%7Dfunction%20getScoreList()%7Breturn%20prompt(%22please%20input%20score%20seperated%20by%20space%22).split(%2F%5Cs%2Fg)%7Dasync%20function%20main()%7Bconst%20cell%3DfindAcient(await%20userClick()%2C%22td%22)%2CinputSelector%3D%60td%3Anth-child(%24%7Bcell.cellIndex%2B1%7D)%20input%60%2CinputList%3DfindAcient(cell%2C%22table%22).querySelectorAll(inputSelector)%2CscoreList%3Dawait%20getScoreList()%3Bfor(let%20i%3D0%3Bi%3CinputList.length%3Bi%2B%2B)%7BinputList%5Bi%5D.value%3DscoreList%5Bi%5D%7D%7Dmain()%3B%7D()
 
 [e3new entitle]: e3new-entitle.user.js
-[paste-to-form-file.bookmarklet.js]: javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconsole.debug(paste.clipboardData.files)%3Bconst%20input%3Ddocument.querySelector('input%5Btype%20%3D%20%22file%22%5D')%3Binput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()
+[paste-to-form-file.bookmarklet.js]: javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconst%20input%3Ddocument.querySelector('input%5Btype%20%3D%20%22file%22%5D')%3Bif(!input)return%3Bconsole.debug(...paste.clipboardData.files)%2Cinput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()
 
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
