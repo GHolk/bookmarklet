@@ -94,14 +94,14 @@ chrome 好像會跳出大量下載的警告，記得勾允許。</p>
 <h2 id="[e3new-entitle]"><a href="e3new-entitle.user.js">e3new entitle</a></h2>
 <p>讓 e3 new 的網頁標題顯示課程名稱、分頁名稱等資訊，
 這樣就可以用瀏覽器的網址列搜尋快速找到某堂課的頁面。</p>
-<h2 id="[paste-to-form-file-小書籤版][paste-to-form-file.user.js]"><a href="paste-to-form-file.user.js">paste to form file 小書籤版</a></h2>
+<h2 id="[paste-to-form-file-小書籤版][paste-to-form-file.bookmarklet.js]"><a href="javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconsole.debug(paste.clipboardData.files)%3Bconst%20input%3Ddocument.querySelector(&#39;input%5Btype%20%3D%20%22file%22%5D&#39;)%3Binput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()">paste to form file 小書籤版</a></h2>
 <p>讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
 此為小書籤版本，在含有上傳檔案的表單欄位 <code>&lt;input type=&quot;file&quot;&gt;</code>
 的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
 將剪貼簿中的檔案貼到表單中。
 如果網頁中含有多於一個的允許貼上檔案的表單，
 則會貼上到網頁中第一個表單。</p>
-<h2 id="[paste-to-form-file-油猴腳本][paste-to-form-file.bookmarklet.js]"><a href="javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconsole.debug(paste.clipboardData.files)%3Bconst%20input%3Ddocument.querySelector(&#39;input%5Btype%20%3D%20%22file%22%5D&#39;)%3Binput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()">paste to form file 油猴腳本</a></h2>
+<h2 id="[paste-to-form-file-油猴腳本][paste-to-form-file.user.js]"><a href="paste-to-form-file.user.js">paste to form file 油猴腳本</a></h2>
 <p>同上功能，但是油猴腳本 user.js 的版本，
 好處是可以直接在指定的網址下執行，不用特別打開書籤欄執行小書籤。
 預設本腳本只會在 <a href="http://www.google.com/imghp">google 以圖搜圖的頁面</a> 啟用，

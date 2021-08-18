@@ -115,7 +115,7 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 
 [e3 new entitle]: e3new-entitle.user.js
 
-## [paste to form file 小書籤版][paste-to-form-file.user.js]
+## [paste to form file 小書籤版][paste-to-form-file.bookmarklet.js]
 讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
 此為小書籤版本，在含有上傳檔案的表單欄位 `<input type="file">`
 的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
@@ -123,7 +123,7 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 如果網頁中含有多於一個的允許貼上檔案的表單，
 則會貼上到網頁中第一個表單。
 
-## [paste to form file 油猴腳本][paste-to-form-file.bookmarklet.js]
+## [paste to form file 油猴腳本][paste-to-form-file.user.js]
 同上功能，但是油猴腳本 user.js 的版本，
 好處是可以直接在指定的網址下執行，不用特別打開書籤欄執行小書籤。
 預設本腳本只會在 [google 以圖搜圖的頁面][google image] 啟用，
@@ -153,6 +153,6 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 [e3new grade]: javascript:void%20function%20()%20%7Bfunction%20userClick()%7Breturn%20alert(%22please%20click%20the%20column%20you%20want%20to%20grade%22)%2Cnew%20Promise(resolve%3D%3E%7Bwindow.addEventListener(%22click%22%2Cclick%3D%3Eresolve(click.target)%2C%7Bonce%3A!0%7D)%7D)%7Dfunction%20findAcient(node%2CtestSelector)%7Blet%20test%3Bfor(test%3D%22string%22%3D%3Dtypeof%20testSelector%3Fnode%3D%3Enode.matches(testSelector)%3AtestSelector%3Bnode%3B)%7Bif(test(node))return%20node%3Bnode%3Dnode.parentNode%7Dreturn%20null%7Dfunction%20getScoreList()%7Breturn%20prompt(%22please%20input%20score%20seperated%20by%20space%22).split(%2F%5Cs%2Fg)%7Dasync%20function%20main()%7Bconst%20cell%3DfindAcient(await%20userClick()%2C%22td%22)%2CinputSelector%3D%60td%3Anth-child(%24%7Bcell.cellIndex%2B1%7D)%20input%60%2CinputList%3DfindAcient(cell%2C%22table%22).querySelectorAll(inputSelector)%2CscoreList%3Dawait%20getScoreList()%3Bfor(let%20i%3D0%3Bi%3CinputList.length%3Bi%2B%2B)%7BinputList%5Bi%5D.value%3DscoreList%5Bi%5D%7D%7Dmain()%3B%7D()
 
 [e3new entitle]: e3new-entitle.user.js
-[paste-to-form-file.user.js]: paste-to-form-file.user.js
 [paste-to-form-file.bookmarklet.js]: javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconsole.debug(paste.clipboardData.files)%3Bconst%20input%3Ddocument.querySelector('input%5Btype%20%3D%20%22file%22%5D')%3Binput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()
 
+[paste-to-form-file.user.js]: paste-to-form-file.user.js
