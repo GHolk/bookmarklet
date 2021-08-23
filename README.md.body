@@ -126,19 +126,24 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 [e3 new entitle]: e3new-entitle.user.js
 
 ## [paste to form file 小書籤版][paste-to-form-file.bookmarklet.js]
-讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
+讓使用者可以用 ctrl-v 貼上或是用拖放檔案的方式把檔案加到表單中的檔案欄位。
 此為小書籤版本，在含有上傳檔案的表單欄位 `<input type="file">`
 的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
 將剪貼簿中的檔案，例如在網頁上右鍵複製的圖片，直接貼到表單中。
+或者是用拖放的方式，將電腦中的檔案拖放到網頁中，
+檔案即會被載入到表單中的檔案欄位。
 如果網頁中含有多於一個的允許貼上檔案的表單，
 則會貼上到網頁中第一個表單。
 
 ## [paste to form file 油猴腳本][paste-to-form-file.user.js]
 同上功能，但是油猴腳本 user.js 的版本，
 好處是可以直接在指定的網址下執行，不用特別打開書籤欄執行小書籤。
+此外相比小書籤版本，油猴版除了拖放電腦中的檔案，
+也可以直接拖放其它網頁中的圖片。（由於油猴允許跨網域發送請求。）
 預設本腳本只會在 [google 以圖搜圖的頁面][google image] 啟用，
-如果希望在其它常造訪的網站上啟用，請在油猴腳本選單中自行設定：
-選單 (menu) > paste to form file >
+如果希望在其它常造訪的網站上啟用，
+請在油猴腳本選單中將網站的網址加到腳本的使用者包含或使用者符合中：
+油猴選單 (monkey menu) > paste to form file >
 使用者指令稿選項 (user script options) >
 使用者包含 (include) 或使用者符合 (match) 。
 

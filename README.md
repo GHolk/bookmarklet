@@ -126,19 +126,24 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 [e3 new entitle]: e3new-entitle.user.js
 
 ## [paste to form file 小書籤版][paste-to-form-file.bookmarklet.js]
-讓使用者可以用 ctrl-v 貼上檔案到表單中的檔案欄位。
+讓使用者可以用 ctrl-v 貼上或是用拖放檔案的方式把檔案加到表單中的檔案欄位。
 此為小書籤版本，在含有上傳檔案的表單欄位 `<input type="file">`
 的網頁中執行此小書籤後，即可透過 ctrl-c 或其它貼上的方式，
 將剪貼簿中的檔案，例如在網頁上右鍵複製的圖片，直接貼到表單中。
+或者是用拖放的方式，將電腦中的檔案拖放到網頁中，
+檔案即會被載入到表單中的檔案欄位。
 如果網頁中含有多於一個的允許貼上檔案的表單，
 則會貼上到網頁中第一個表單。
 
 ## [paste to form file 油猴腳本][paste-to-form-file.user.js]
 同上功能，但是油猴腳本 user.js 的版本，
 好處是可以直接在指定的網址下執行，不用特別打開書籤欄執行小書籤。
+此外相比小書籤版本，油猴版除了拖放電腦中的檔案，
+也可以直接拖放其它網頁中的圖片。（由於油猴允許跨網域發送請求。）
 預設本腳本只會在 [google 以圖搜圖的頁面][google image] 啟用，
-如果希望在其它常造訪的網站上啟用，請在油猴腳本選單中自行設定：
-選單 (menu) > paste to form file >
+如果希望在其它常造訪的網站上啟用，
+請在油猴腳本選單中將網站的網址加到腳本的使用者包含或使用者符合中：
+油猴選單 (monkey menu) > paste to form file >
 使用者指令稿選項 (user script options) >
 使用者包含 (include) 或使用者符合 (match) 。
 
@@ -163,6 +168,6 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 [e3new grade]: javascript:void%20function%20()%20%7Bfunction%20userClick()%7Breturn%20alert(%22please%20click%20the%20column%20you%20want%20to%20grade%22)%2Cnew%20Promise(resolve%3D%3E%7Bwindow.addEventListener(%22click%22%2Cclick%3D%3Eresolve(click.target)%2C%7Bonce%3A!0%7D)%7D)%7Dfunction%20findAcient(node%2CtestSelector)%7Blet%20test%3Bfor(test%3D%22string%22%3D%3Dtypeof%20testSelector%3Fnode%3D%3Enode.matches(testSelector)%3AtestSelector%3Bnode%3B)%7Bif(test(node))return%20node%3Bnode%3Dnode.parentNode%7Dreturn%20null%7Dfunction%20getScoreList()%7Breturn%20prompt(%22please%20input%20score%20seperated%20by%20space%22).split(%2F%5Cs%2Fg)%7Dasync%20function%20main()%7Bconst%20cell%3DfindAcient(await%20userClick()%2C%22td%22)%2CinputSelector%3D%60td%3Anth-child(%24%7Bcell.cellIndex%2B1%7D)%20input%60%2CinputList%3DfindAcient(cell%2C%22table%22).querySelectorAll(inputSelector)%2CscoreList%3Dawait%20getScoreList()%3Bfor(let%20i%3D0%3Bi%3CinputList.length%3Bi%2B%2B)%7BinputList%5Bi%5D.value%3DscoreList%5Bi%5D%7D%7Dmain()%3B%7D()
 
 [e3new entitle]: e3new-entitle.user.js
-[paste-to-form-file.bookmarklet.js]: javascript:void%20function%20()%20%7Bdocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7Bif(0%3D%3Dpaste.clipboardData.files.length)return%3Bconst%20input%3Ddocument.querySelector('input%5Btype%20%3D%20%22file%22%5D')%3Bif(!input)return%3Bconsole.debug(...paste.clipboardData.files)%2Cinput.files%3Dpaste.clipboardData.files%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7D)%3B%7D()
+[paste-to-form-file.bookmarklet.js]: javascript:void%20function%20()%20%7Bfunction%20createFileList(...fileList)%7Bconst%20data%3Dnew%20DataTransfer%3Bfor(const%20file%20of%20fileList)data.items.add(file)%3Breturn%20data.files%7Dasync%20function%20fetchFile(url)%7Breturn%20await%20new%20Promise((resolve%2Creject)%3D%3E%7BGM.xmlHttpRequest(%7Bmethod%3A%22GET%22%2Curl%3Aurl%2CresponseType%3A%22blob%22%2Conload(xhr)%7Bconst%20blob%3Dxhr.response%2Ctype%3Dfunction(xhr)%7Bfor(const%20row%20of%20xhr.responseHeaders.split(%2F%5Cn%2F))%7Bconst%20scan%3Drow.match(%2F%5Econtent-type%3A%20(.*)%5C%2F(.*)%2Fi)%3Bif(scan)return%20scan%5B2%5D%7D%7D(xhr)%3Blet%20file%3Bfile%3Dtype%3Fnew%20File(%5Bblob%5D%2C%60drop-image.%24%7Btype%7D%60%2C%7Btype%3A%60image%2F%24%7Btype%7D%60%7D)%3Anew%20File(%5Bblob%5D%2C%22drop-image%22)%2Cresolve(file)%7D%2Conerror(xhr)%7Breject(xhr.statusText)%7D%7D)%7D)%7Dfunction%20putFileIntoForm(fileList)%7Bconst%20input%3Ddocument.querySelector('input%5Btype%20%3D%20%22file%22%5D')%3Bif(!input)return%3Bconsole.debug(%22fileList%3A%22%2C...fileList)%2Cinput.files%3DfileList%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7Ddocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7B0!%3Dpaste.clipboardData.files.length%26%26putFileIntoForm(paste.clipboardData.files)%7D)%2Cdocument.body.addEventListener(%22dragover%22%2Cover%3D%3Eover.preventDefault())%2Cdocument.body.addEventListener(%22drop%22%2Casync%20drop%3D%3E%7Bdrop.preventDefault()%3Bconst%20data%3Ddrop.dataTransfer%3Bconsole.debug(%22type%22%2C...data.types)%3Blet%20fileList%3Bif(%22undefined%22!%3Dtypeof%20GM%26%260%3D%3Ddata.files.length%26%26~data.types.indexOf(%22text%2Fplain%22))%7Bconst%20urlList%3Ddata.getData(%22text%2Fplain%22).split(%22%5Cn%22).filter(u%3D%3E%22%23%22!%3Du.charAt(0))%3Bconsole.debug(urlList)%3Btry%7BfileList%3Dawait%20Promise.all(urlList.map(fetchFile))%2Cconsole.debug(fileList)%2CfileList%3DcreateFileList(...fileList)%7Dcatch(e)%7Breturn%20void%20console.error(e)%7D%7Delse%20fileList%3Ddrop.dataTransfer.files%3BputFileIntoForm(fileList)%7D)%3B%7D()
 
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
