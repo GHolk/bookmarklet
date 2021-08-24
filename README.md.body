@@ -164,4 +164,6 @@ this user script remove these redirect.
 this user script will send browser notification
 when facebook web page get notification.
 the notification will be sent only if fb is in background tab.
+if click the button in notification,
+userscript will open the page in notification.
 

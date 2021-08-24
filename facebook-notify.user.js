@@ -2,13 +2,14 @@
 // @name     facebook notification sender
 // @namespace http://gholk.github.io/
 // @description send browser notification when getting notification on facebook.
-// @version  2
+// @version  3
 // @match    https://www.facebook.com/*
 // @grant    GM.notification
 // @grant    window.focus
 // ==/UserScript==
 
-const iconFacebook = document.querySelector('link[rel~=icon]').href
+const iconFacebook = document.querySelector('link[rel~=icon]')?.href ||
+      'https://static.xx.fbcdn.net/rsrc.php/yD/r/d4ZIVX-5C-b.ico'
 
 function findNotify(node = document.body) {
     for (const notify of node.querySelectorAll('[aria-atomic = true]')) {
@@ -23,6 +24,8 @@ function sendGmNotify(node) {
     const image = iconFacebook
     GM.notification(message, title, image, () => {
         window.focus()
+        const anchor = node.previousElementSibling.querySelector('a')
+        anchor.click()
     })
 }
 function pageInBackGround() {
@@ -42,4 +45,3 @@ observer.observe(document.body, {
     subtree: true,
     characterData: true
 })
-
