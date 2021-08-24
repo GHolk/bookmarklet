@@ -121,6 +121,25 @@ chrome 好像會跳出大量下載的警告，記得勾允許。</p>
 油猴選單 (monkey menu) &gt; paste to form file &gt;
 使用者指令稿選項 (user script options) &gt;
 使用者包含 (include) 或使用者符合 (match) 。</p>
+<h2 id="[paste-to-form-file-userscript-version][paste-to-form-file.user.js]"><a href="paste-to-form-file.user.js">paste to form file userscript version</a></h2>
+<p>this script allow user to paste or drag file into the file field of form.
+you can:</p>
+<ul>
+<li>right click on image &gt; copy image &gt; ctrl-v on web-page containing form allow upload file</li>
+<li>drag image from other web-page and drop on web-page</li>
+<li>drag file from desktop or file explorer</li>
+<li>drag text which is a url</li>
+</ul>
+<p>this script is design for general propose.
+it should work in any page containing file upload field
+( <code>&lt;input type=&quot;file&quot;&gt;</code> ).
+if you are using any web-page with file upload field,
+you can add its url to this script&#39;s userscript include/match list,
+(monkey menu &gt; <code>paste to form file field</code> &gt; userscript option &gt;
+userscript include or userscript match)
+so you can paste/drop file into the form.
+(this script only run in <a href="http://www.google.com/imghp">google image search</a> default.
+you need to manually add other url.)</p>
 <h2 id="[google-search-unredirect]"><a href="google-search-unredirect.user.js">google search unredirect</a></h2>
 <p>this user script will remove redirect link in google search result page,
 so you can copy the link directly on google search result page,
@@ -132,9 +151,9 @@ it is troublesome if you want to <em>coyp the link</em> in context menu.
 this user script remove these redirect.</p>
 <h2 id="[facebook-notify]"><a href="facebook-notify.user.js">facebook notify</a></h2>
 <p>this user script will send browser notification
-when facebook web page get notification.
-the notification will be sent only if fb is in background tab.
+when background facebook web page get notification.
+the notification will be sent only if fb is not foreground tab.
 if click the button in notification,
-userscript will open the page in notification.</p>
+userscript will switch to fb tab and open the page.</p>
 
 </html>
