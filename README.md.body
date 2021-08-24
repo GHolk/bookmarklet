@@ -148,3 +148,20 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 使用者包含 (include) 或使用者符合 (match) 。
 
 [google image]: http://www.google.com/imghp
+
+## [google search unredirect]
+this user script will remove redirect link in google search result page,
+so you can copy the link directly on google search result page,
+and link to page without redirected by google.
+
+in google search result page, the anchor of result
+will be rewrited to a link to google,
+then google redirect the link to the destination.
+it is troublesome if you want to *coyp the link* in context menu.
+this user script remove these redirect.
+
+## [facebook notify]
+this user script will send browser notification
+when facebook web page get notification.
+the notification will be sent only if fb is in background tab.
+

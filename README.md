@@ -148,6 +148,23 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 使用者包含 (include) 或使用者符合 (match) 。
 
 [google image]: http://www.google.com/imghp
+
+## [google search unredirect]
+this user script will remove redirect link in google search result page,
+so you can copy the link directly on google search result page,
+and link to page without redirected by google.
+
+in google search result page, the anchor of result
+will be rewrited to a link to google,
+then google redirect the link to the destination.
+it is troublesome if you want to *coyp the link* in context menu.
+this user script remove these redirect.
+
+## [facebook notify]
+this user script will send browser notification
+when facebook web page get notification.
+the notification will be sent only if fb is in background tab.
+
 [youtube clean player]: javascript:void%20function%20()%20%7Bconst%20urlToPlayer%3D%7B%7D%3BurlToPlayer.youtube%3Dfunction(location)%7Bconst%20scan%3Dlocation.search.match(%2F%5B%26%5C%2F%5C%3F%5Dv%3D(%5B%5E%26%5D*)%2F)%3Bconst%20id%3Dscan%5B1%5D%3Breturn%22https%3A%2F%2Fyoutube.com%2Fembed%2F%22%2Bid%7D%3Bfunction%20openCleanWindow(url)%7Bwindow.open(url%2C%22clean%20youtube%20player%22%2C%22resizable%22)%7Dfunction%20createButton()%7Bconst%20menuId%3D%22menu-container%22%3Bconst%20button%3Ddocument.createElement(%22button%22)%3Bbutton.textContent%3D%22clean%20window%22%3Bbutton.onclick%3D(()%3D%3E%7Bconst%20url%3DurlToPlayer.youtube(location)%3BopenCleanWindow(url)%7D)%3Bdocument.getElementById(menuId).appendChild(button)%7DopenCleanWindow(urlToPlayer.youtube(location))%3B%7D()
 
 [custom search]: javascript:void%20function%20()%20%7Bconst%20map%3D%7B%7D%3Bmap.set%3Dfunction(alias%2Curl%2Cname)%7Bthis%5Balias%5D%3D%7Burl%3Aurl%2Cname%3Aname%7D%7D%3Bmap.createForm%3Dfunction(key)%7Bconst%20form%3Ddocument.createElement(%22form%22)%3Bconst%20search%3Dthis%5Bkey%5D%3Bform.action%3Dsearch.url%3Bform.target%3D%22_blank%22%3Bconst%20input%3Ddocument.createElement(%22input%22)%3Binput.name%3Dsearch.name%3Bform.appendChild(input)%3Breturn%20form%7D%3Bmap.search%3Dfunction(key%2Cstring)%7Bconst%20form%3Dthis.createForm(key)%3Bform.querySelector(%22input%22).value%3Dstring%3Bdocument.documentElement.appendChild(form)%3Bform.submit()%7D%3Bmap.set(%22pttpedia%22%2C%22http%3A%2F%2Fzh.pttpedia.wikia.com%2Fwiki%2F%E7%89%B9%E6%AE%8A%3A%E6%90%9C%E7%B4%A2%22%2C%22query%22)%3Bfunction%20promptSearch(string)%7Bif(!string)string%3Dprompt(%22custom%20search%22)%3Bconst%20scan%3Dstring.match(%2F(%5B%5E%5Cs%5D%2B)%5Cs(.*)%24%2F)%3Bconst%20key%3Dscan%5B1%5D%3Bconst%20value%3Dscan%5B2%5D%3Bmap.search(key%2Cvalue)%7DpromptSearch()%3B%7D()
@@ -171,3 +188,5 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 [paste-to-form-file.bookmarklet.js]: javascript:void%20function%20()%20%7Bfunction%20createFileList(...fileList)%7Bconst%20data%3Dnew%20DataTransfer%3Bfor(const%20file%20of%20fileList)data.items.add(file)%3Breturn%20data.files%7Dasync%20function%20fetchFile(url)%7Breturn%20await%20new%20Promise((resolve%2Creject)%3D%3E%7BGM.xmlHttpRequest(%7Bmethod%3A%22GET%22%2Curl%3Aurl%2CresponseType%3A%22blob%22%2Conload(xhr)%7Bconst%20blob%3Dxhr.response%2Ctype%3Dfunction(xhr)%7Bfor(const%20row%20of%20xhr.responseHeaders.split(%2F%5Cn%2F))%7Bconst%20scan%3Drow.match(%2F%5Econtent-type%3A%20(.*)%5C%2F(.*)%2Fi)%3Bif(scan)return%20scan%5B2%5D%7D%7D(xhr)%3Blet%20file%3Bfile%3Dtype%3Fnew%20File(%5Bblob%5D%2C%60drop-image.%24%7Btype%7D%60%2C%7Btype%3A%60image%2F%24%7Btype%7D%60%7D)%3Anew%20File(%5Bblob%5D%2C%22drop-image%22)%2Cresolve(file)%7D%2Conerror(xhr)%7Breject(xhr.statusText)%7D%7D)%7D)%7Dfunction%20putFileIntoForm(fileList)%7Bconst%20input%3Ddocument.querySelector('input%5Btype%20%3D%20%22file%22%5D')%3Bif(!input)return%3Bconsole.debug(%22fileList%3A%22%2C...fileList)%2Cinput.files%3DfileList%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7Ddocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7B0!%3Dpaste.clipboardData.files.length%26%26putFileIntoForm(paste.clipboardData.files)%7D)%2Cdocument.body.addEventListener(%22dragover%22%2Cover%3D%3Eover.preventDefault())%2Cdocument.body.addEventListener(%22drop%22%2Casync%20drop%3D%3E%7Bdrop.preventDefault()%3Bconst%20data%3Ddrop.dataTransfer%3Bconsole.debug(%22type%22%2C...data.types)%3Blet%20fileList%3Bif(%22undefined%22!%3Dtypeof%20GM%26%260%3D%3Ddata.files.length%26%26~data.types.indexOf(%22text%2Fplain%22))%7Bconst%20urlList%3Ddata.getData(%22text%2Fplain%22).split(%22%5Cn%22).filter(u%3D%3E%22%23%22!%3Du.charAt(0))%3Bconsole.debug(urlList)%3Btry%7BfileList%3Dawait%20Promise.all(urlList.map(fetchFile))%2Cconsole.debug(fileList)%2CfileList%3DcreateFileList(...fileList)%7Dcatch(e)%7Breturn%20void%20console.error(e)%7D%7Delse%20fileList%3Ddrop.dataTransfer.files%3BputFileIntoForm(fileList)%7D)%3B%7D()
 
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
+[google search unredirect]: google-search-unredirect.user.js
+[facebook notify]: facebook-notify.user.js
