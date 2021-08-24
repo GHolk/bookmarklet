@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name     facebook notification sender
 // @namespace http://gholk.github.io/
-// @version  1
+// @description send browser notification when getting notification on facebook.
+// @version  2
 // @match    https://www.facebook.com/*
 // @grant    GM.notification
 // @grant    window.focus
@@ -24,13 +25,15 @@ function sendGmNotify(node) {
         window.focus()
     })
 }
+function pageInBackGround() {
+    return document.visibilityState != 'visible'
+}
 const observer = new MutationObserver(mulist => {
     for (const mutation of mulist) {
         if (mutation.type == 'childList') {
             const node = mutation.target
-            console.debug(node)
             const notify = findNotify(node)
-            if (notify) sendGmNotify(notify)
+            if (notify && pageInBackGround()) sendGmNotify(notify)
         }
     }
 })
