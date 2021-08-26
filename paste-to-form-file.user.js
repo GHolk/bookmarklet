@@ -3,7 +3,7 @@
 // @namespace  http://gholk.github.io
 // @description  ctrl-v to paste clipboard file into file form field
 // @match https://www.google.com/imghp
-// @version  4.1.0
+// @version  4.1.1
 // @grant  GM.xmlHttpRequest
 // @license GPLv3
 // ==/UserScript==
@@ -48,8 +48,11 @@ async function fetchFile(url) {
     function xhrToFileType(xhr) {
         for (const row of xhr.responseHeaders.split(/\n/)) {
             // line-end with \r\n
-            const scan = row.match(/^content-type: (.*)\/(.*)/i)
-            if (scan) return scan[2]
+            const scan = row.match(/^content-type: ([-_+\w]+)\/([-_+\w]+)/i)
+            if (scan) {
+                console.debug(row)
+                return scan[2]
+            }
         }
     }
     return await new Promise((resolve, reject) => {
