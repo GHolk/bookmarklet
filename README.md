@@ -1,4 +1,7 @@
-# gholk's bookmarklet
+<title>gholk's bookmarklet and userscript</title>
+
+# gholk's bookmarklet and userscript
+
 <meta charset="UTF-8">
 
 <link rel="alternate" type="application/atom+xml"
@@ -187,6 +190,27 @@ the notification will be sent only if fb is not foreground tab.
 if click the button in notification,
 userscript will switch to fb tab and open the page.
 
+## [happy html keyboard player]
+an easy html player helper script.
+add keyboard short cut for video playing,
+including arrow key right/left to seek/backward 5 second,
+and space to pause/play.
+you need to add the url to *user match* of this script
+if you want to execute this script in that website.
+
+簡單的播放器腳本，幫 html 的 vedio 標籤加上鍵盤快捷鍵，
+包含左右鍵來倒退、前進 5 秒，還有空白鍵來暫停、播放。
+本腳本預期可以在任何播放器中執行，
+所以你可以將任意網站的網址加入此腳本的 *使用者符合* 列表中，
+以在該網站的影片中加入鍵盤快捷鍵功能；
+但某些已經定義過快捷鍵的網頁如 youtube bilibili 中可能會有衝突。
+預設會在公視的 [ptsplus.tv] 中執行，
+此外在公視的 [勇者動畫系列] 中會自動將畫質切為 480P，
+因為勇者系列不知道為什麼，如果畫質設 auto 或太高，
+都會有非常嚴重的卡頓。
+
+[ptsplus.tv]: https://www.ptsplus.tv/
+[勇者動畫系列]: https://www.ptsplus.tv/season/4b572dd5-bdc7-45a6-ba35-accfe9cda3df
 [youtube clean player]: javascript:void%20function%20()%20%7Bconst%20urlToPlayer%3D%7B%7D%3BurlToPlayer.youtube%3Dfunction(location)%7Bconst%20scan%3Dlocation.search.match(%2F%5B%26%5C%2F%5C%3F%5Dv%3D(%5B%5E%26%5D*)%2F)%3Bconst%20id%3Dscan%5B1%5D%3Breturn%22https%3A%2F%2Fyoutube.com%2Fembed%2F%22%2Bid%7D%3Bfunction%20openCleanWindow(url)%7Bwindow.open(url%2C%22clean%20youtube%20player%22%2C%22resizable%22)%7Dfunction%20createButton()%7Bconst%20menuId%3D%22menu-container%22%3Bconst%20button%3Ddocument.createElement(%22button%22)%3Bbutton.textContent%3D%22clean%20window%22%3Bbutton.onclick%3D(()%3D%3E%7Bconst%20url%3DurlToPlayer.youtube(location)%3BopenCleanWindow(url)%7D)%3Bdocument.getElementById(menuId).appendChild(button)%7DopenCleanWindow(urlToPlayer.youtube(location))%3B%7D()
 
 [custom search]: javascript:void%20function%20()%20%7Bconst%20map%3D%7B%7D%3Bmap.set%3Dfunction(alias%2Curl%2Cname)%7Bthis%5Balias%5D%3D%7Burl%3Aurl%2Cname%3Aname%7D%7D%3Bmap.createForm%3Dfunction(key)%7Bconst%20form%3Ddocument.createElement(%22form%22)%3Bconst%20search%3Dthis%5Bkey%5D%3Bform.action%3Dsearch.url%3Bform.target%3D%22_blank%22%3Bconst%20input%3Ddocument.createElement(%22input%22)%3Binput.name%3Dsearch.name%3Bform.appendChild(input)%3Breturn%20form%7D%3Bmap.search%3Dfunction(key%2Cstring)%7Bconst%20form%3Dthis.createForm(key)%3Bform.querySelector(%22input%22).value%3Dstring%3Bdocument.documentElement.appendChild(form)%3Bform.submit()%7D%3Bmap.set(%22pttpedia%22%2C%22http%3A%2F%2Fzh.pttpedia.wikia.com%2Fwiki%2F%E7%89%B9%E6%AE%8A%3A%E6%90%9C%E7%B4%A2%22%2C%22query%22)%3Bfunction%20promptSearch(string)%7Bif(!string)string%3Dprompt(%22custom%20search%22)%3Bconst%20scan%3Dstring.match(%2F(%5B%5E%5Cs%5D%2B)%5Cs(.*)%24%2F)%3Bconst%20key%3Dscan%5B1%5D%3Bconst%20value%3Dscan%5B2%5D%3Bmap.search(key%2Cvalue)%7DpromptSearch()%3B%7D()
@@ -213,3 +237,4 @@ userscript will switch to fb tab and open the page.
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
 [google search unredirect]: google-search-unredirect.user.js
 [facebook notify]: facebook-notify.user.js
+[happy html keyboard player]: happy-html-keyboard-player.user.js
