@@ -37,6 +37,13 @@ img[alt="drag bookmarklet vedio"] {
 [github rss]: https://github.com/GHolk/bookmarklet/commits/master.atom
 [github repository]: https://github.com/GHolk/bookmarklet
 
+## 授權 license
+若無指定，本頁面中所有腳本使用 [GPLv3] 授權。
+
+all scripts in this page/repository are licensed under [GPLv3].
+
+[GPLv3]: https://www.gnu.org/licenses/gpl-3.0.html
+
 ## [youtube clean player]
 play youtube video in clean window,
 without locationbar, menubar, toolbar, statusbar.

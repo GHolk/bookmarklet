@@ -30,6 +30,9 @@ img[alt="drag bookmarklet vedio"] {
 <h2 id="訂閱">訂閱</h2>
 <p>懶得做 rss，請直接訂閱 <a href="https://github.com/GHolk/bookmarklet/commits/master.atom">github 自動依 git 歷史產生的 rss</a> ，
 或直接 watch <a href="https://github.com/GHolk/bookmarklet">github repository</a> 用 email 收 github 通知。</p>
+<h2 id="授權-license">授權 license</h2>
+<p>若無指定，本頁面中所有腳本使用 <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPLv3</a> 授權。</p>
+<p>all scripts in this page/repository are licensed under <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPLv3</a>.</p>
 <h2 id="[youtube-clean-player]"><a href="javascript:void%20function%20()%20%7Bconst%20urlToPlayer%3D%7B%7D%3BurlToPlayer.youtube%3Dfunction(location)%7Bconst%20scan%3Dlocation.search.match(%2F%5B%26%5C%2F%5C%3F%5Dv%3D(%5B%5E%26%5D*)%2F)%3Bconst%20id%3Dscan%5B1%5D%3Breturn%22https%3A%2F%2Fyoutube.com%2Fembed%2F%22%2Bid%7D%3Bfunction%20openCleanWindow(url)%7Bwindow.open(url%2C%22clean%20youtube%20player%22%2C%22resizable%22)%7Dfunction%20createButton()%7Bconst%20menuId%3D%22menu-container%22%3Bconst%20button%3Ddocument.createElement(%22button%22)%3Bbutton.textContent%3D%22clean%20window%22%3Bbutton.onclick%3D(()%3D%3E%7Bconst%20url%3DurlToPlayer.youtube(location)%3BopenCleanWindow(url)%7D)%3Bdocument.getElementById(menuId).appendChild(button)%7DopenCleanWindow(urlToPlayer.youtube(location))%3B%7D()">youtube clean player</a></h2>
 <p>play youtube video in clean window,
 without locationbar, menubar, toolbar, statusbar.</p>
