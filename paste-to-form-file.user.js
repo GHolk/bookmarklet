@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name  paste to form file field
-// @namespace  http://gholk.github.io/
+// @namespace  http://gholk.github.io
 // @description  ctrl-v to paste clipboard file into file form field
 // @match https://www.google.com/imghp
-// @version  4
+// @version  4.1.0
 // @grant  GM.xmlHttpRequest
+// @license GPLv3
 // ==/UserScript==
 
 document.body.addEventListener('paste', (paste) => {

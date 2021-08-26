@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name     google search unredirect
-// @namespace http://gholk.github.io/
+// @namespace http://gholk.github.io
 // @description remove redirect link in google search result page
-// @version  8
+// @version  8.1.0
 // @match    https://www.google.com/search?*
 // @grant    none
+// @license GPLv3
 // ==/UserScript==
 
 function unlistenClick() {

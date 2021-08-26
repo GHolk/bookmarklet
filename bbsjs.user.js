@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name  chrome bbs javascript executor
-// @namespace  http://gholk.github.io/
+// @namespace  http://gholk.github.io
 // @description  press J in term.ptt.cc to run JavaScript
 // @match https://term.ptt.cc/*
 // @match https://www.clam.ml/*
 // @match https://www.ptt.cc/bbs/*
-// @version  17
+// @version  17.1.0
 // @grant  none
+// @license GPLv3
 // ==/UserScript==
 
 const $ = e => document.querySelector(e)

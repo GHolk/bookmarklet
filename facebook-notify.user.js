@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name     facebook notification sender
-// @namespace http://gholk.github.io/
+// @namespace http://gholk.github.io
 // @description send browser notification when getting notification on facebook.
-// @version  3
+// @version  3.1.0
 // @match    https://www.facebook.com/*
 // @grant    GM.notification
 // @grant    window.focus
+// @license GPLv3
 // ==/UserScript==
 
 const iconFacebook = document.querySelector('link[rel~=icon]')?.href ||
