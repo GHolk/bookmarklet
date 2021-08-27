@@ -3,7 +3,7 @@
 // @namespace  http://gholk.github.io
 // @description  ctrl-v to paste clipboard file into file form field
 // @match https://www.google.com/imghp
-// @version  4.1.1
+// @version  5.1.0
 // @grant  GM.xmlHttpRequest
 // @license GPLv3
 // ==/UserScript==
@@ -11,6 +11,7 @@
 /* todo
  * append file when multiple
  * multiple image selection
+ * option paste from anchor or image
  */
 
 document.body.addEventListener('paste', (paste) => {
@@ -23,22 +24,35 @@ document.body.addEventListener('drop', async (drop) => {
     const data = drop.dataTransfer
     console.debug('type', ...data.types)
     let fileList
-    if (typeof GM != 'undefined' &&
-        data.files.length == 0 && ~data.types.indexOf('text/plain')) {
-        const urlList = data.getData('text/plain')
-              .split('\n').filter(u => u.charAt(0) != '#')
-        console.debug(urlList)
+    if (typeof GM != 'undefined' && data.files.length == 0) {
+        let urlList
+        if (~data.types.indexOf('text/html')) {
+            const html = data.getData('text/html')
+            const dom = parseHtml(html)
+            urlList = dom.querySelectorAll('img')
+            console.debug('query img url')
+            if (urlList.length == 0) {
+                console.debug('no image, query anchor')
+                urlList = dom.querySelectorAll('a')
+            }
+            urlList = Array.from(urlList).map(node => node.src || node.href)
+        }
+        if (urlList.length == 0 && ~data.types.indexOf('text/plain')) {
+            console.debug('no url found, try plain text')
+            urlList = data.getData('text/plain')
+                .split('\n').filter(u => u.charAt(0) != '#')
+        }
         try {
             fileList = await Promise.all(urlList.map(fetchFile))
-            console.debug(fileList)
-            fileList = createFileList(...fileList)
         }
         catch (e) {
             console.error(e)
             return
         }
+        fileList = createFileList(...fileList)
     }
     else fileList = drop.dataTransfer.files
+    console.debug('file list:', fileList)
     putFileIntoForm(fileList)
 })
 
@@ -47,6 +61,11 @@ function createFileList(...fileList) {
     const data = new DataTransfer()
     for (const file of fileList) data.items.add(file)
     return data.files
+}
+function parseHtml(html) {
+    const parser = new DOMParser()
+    const dom = parser.parseFromString(html, 'text/html')
+    return dom
 }
 
 async function fetchFile(url) {
