@@ -8,6 +8,11 @@
 // @license GPLv3
 // ==/UserScript==
 
+/* todo
+ * append file when multiple
+ * multiple image selection
+ */
+
 document.body.addEventListener('paste', (paste) => {
     if (paste.clipboardData.files.length == 0) return
     putFileIntoForm(paste.clipboardData.files)
