@@ -2,7 +2,7 @@
 // @name     facebook notification sender
 // @namespace http://gholk.github.io
 // @description send browser notification when getting notification on facebook.
-// @version  3.2.3
+// @version  3.3.0
 // @match    https://www.facebook.com/*
 // @grant    GM.notification
 // @grant    window.focus
@@ -50,14 +50,19 @@ observer.observe(document.body, {
     characterData: true
 })
 
+let titleLastChange = Date.now()
 new MutationObserver(list => {
     const mutation = list[0]
     console.debug('title mutation', list[0].target)
     const message = list[0].target.textContent
     if (!/^\(\d+\)\sFacebook$/.test(message) && pageInBackGround()) {
-        GM.notification(
-            message, option.title, option.icon, () => window.focus()
-        )
+        const now = Date.now()
+        if (now - titleLastChange > 10 * 1000) {
+            GM.notification(
+                message, option.title, option.icon, () => window.focus()
+            )
+        }
+        titleLastChange = now
     }
 }).observe(
     document.getElementsByTagName('title')[0],
