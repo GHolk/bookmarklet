@@ -60,11 +60,16 @@ and open in the new tab.
 ## [facebook video rotate]
 逆時針方向旋轉方向錯誤的 facebook 浮動影片視窗 90° 。
 
-## [enable select contextmenu]
+## [enable select contextmenu 小書籤版][enable-select-contextmenu.bookmarklet.js]
 取消網頁中禁用右鍵與防止選取文字的功能。
 有些網頁會禁止反白選取文字，或是禁止右鍵，
 這個小書籤可以強制允許右鍵與選取文字，
 但不處理禁用 f12 或 ctrl-c 的網頁。
+
+## [enable select contextmenu 油猴腳本][enable-select-contextmenu.user.js]
+同上，但是油猴腳本版本。
+如果常用網站會鎖右鍵和選取文字，
+直接把該網站加入到 user include 即可。
 
 ## [hackmd scroll flip]
 make mouse scroll flip page in hackmd slide mode.

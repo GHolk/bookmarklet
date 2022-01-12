@@ -6,6 +6,9 @@ html_bookmarklet = screen-message.html
 bbsjs.bookmarklet.js: bbsjs.user.js
 	sh bookmarkletify.sh $< > $@
 
+%.bookmarklet.js: %.user.js
+	sh bookmarkletify.sh $< > $@
+
 %.bookmarklet.js: %.js
 	sh bookmarkletify.sh $< > $@
 
