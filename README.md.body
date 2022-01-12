@@ -71,6 +71,16 @@ and open in the new tab.
 如果常用網站會鎖右鍵和選取文字，
 直接把該網站加入到 user include 即可。
 
+## [強制啟用貼上功能][force-enable-paste.user.js]
+某些網站會封鎖貼上功能，也就不能用右鍵貼上或是中鍵貼上，
+也不能用 ctrl-v 貼上。
+目前碰到的是某些信用卡網站，逼你一定要用鍵盤輸入，比較安全。
+這個腳本可以啟用貼上功能。
+如果碰到更多網站，就自己加入吧。
+
+### [強制啟用貼上功能小書籤版][force-enable-paste.bookmarklet.js]
+同上，不想裝油猴的可以用小書籤版。
+
 ## [hackmd scroll flip]
 make mouse scroll flip page in hackmd slide mode.
 title is bookmarklet, below is grease monkey user.js:
