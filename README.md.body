@@ -81,6 +81,18 @@ and open in the new tab.
 ### [強制啟用貼上功能小書籤版][force-enable-paste.bookmarklet.js]
 同上，不想裝油猴的可以用小書籤版。
 
+## [press b to google]
+靈感來自 [gslin 的 press g to google][pg2g] 。
+把搜尋引擎換成 duckduckgo 後，搜尋結果沒有 google 那麼好，
+有時成果不是想要的，就會想直接換回用 google 搜尋。
+gslin 就寫了一個在 duckduckgo 結果頁面上，
+按鍵盤的 g 就會用同樣關鍵字以 google 搜尋的油猴腳本。
+但因為 g 在 vimium 裡蠻常用到的，
+主要就 `gg` 和 `G` 是捲動到頁首和頁尾，
+所以我重寫了一個把 g 改成 b 的版本。
+
+[pg2g]: https://blog.gslin.org/archives/2021/09/10/10312/%E6%94%B9%E5%AF%AB%E3%80%8Cpress-g-to-google-duckduckgo%E3%80%8D%E8%AE%93%E4%BB%96%E6%94%AF%E6%8F%B4-whoogle/
+
 ## [hackmd scroll flip]
 make mouse scroll flip page in hackmd slide mode.
 title is bookmarklet, below is grease monkey user.js:
