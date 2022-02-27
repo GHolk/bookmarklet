@@ -186,6 +186,16 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 
 [google image]: http://www.google.com/imghp
 
+## [儲存頁面 html][download-html.bookmarklet.js]
+將目前網頁的 html 內容儲存為檔案，
+主要是用在一些以 javascript 載入內容的網站。
+因為直接用 wget curl 拿不到東西，只能在瀏覽器裡打開，
+載入完內容後再用小書籤下載下來。
+
+執行後可能會跳出下載視窗，
+下載的檔名預設使用網頁的 title 而不是網址，
+因為網址的重名問題有點嚴重。
+
 ## [paste to form file userscript version][paste-to-form-file.user.js]
 this script allow user to paste or drag file into the file field of form.
 you can:
@@ -273,6 +283,8 @@ if you want to execute this script in that website.
 [paste-to-form-file.bookmarklet.js]: javascript:void%20function%20()%20%7Bfunction%20createFileList(...fileList)%7Bconst%20data%3Dnew%20DataTransfer%3Bfor(const%20file%20of%20fileList)data.items.add(file)%3Breturn%20data.files%7Dfunction%20parseHtml(html)%7Breturn(new%20DOMParser).parseFromString(html%2C%22text%2Fhtml%22)%7Dasync%20function%20fetchFile(url)%7Breturn%20await%20new%20Promise((resolve%2Creject)%3D%3E%7BGM.xmlHttpRequest(%7Bmethod%3A%22GET%22%2Curl%3Aurl%2CresponseType%3A%22blob%22%2Conload(xhr)%7Bconst%20blob%3Dxhr.response%2Ctype%3Dfunction(xhr)%7Bfor(const%20row%20of%20xhr.responseHeaders.split(%2F%5Cn%2F))%7Bconst%20scan%3Drow.match(%2F%5Econtent-type%3A%20(%5B-_%2B%5Cw%5D%2B)%5C%2F(%5B-_%2B%5Cw%5D%2B)%2Fi)%3Bif(scan)return%20console.debug(row)%2Cscan%5B2%5D%7D%7D(xhr)%3Blet%20file%3Bfile%3Dtype%3Fnew%20File(%5Bblob%5D%2C%60drop-image.%24%7Btype%7D%60%2C%7Btype%3A%60image%2F%24%7Btype%7D%60%7D)%3Anew%20File(%5Bblob%5D%2C%22drop-image%22)%2Cresolve(file)%7D%2Conerror(xhr)%7Breject(xhr.statusText)%7D%7D)%7D)%7Dfunction%20putFileIntoForm(fileList)%7Bconst%20input%3Ddocument.querySelector('input%5Btype%20%3D%20%22file%22%5D')%3Bif(!input)return%3Bconsole.debug(%22fileList%3A%22%2C...fileList)%2Cinput.files%3DfileList%3Bconst%20change%3Dnew%20Event(%22change%22%2C%7Bbubbles%3A!0%2Ccancelable%3A!1%7D)%3Binput.dispatchEvent(change)%7Ddocument.body.addEventListener(%22paste%22%2Cpaste%3D%3E%7B0!%3Dpaste.clipboardData.files.length%26%26putFileIntoForm(paste.clipboardData.files)%7D)%2Cdocument.body.addEventListener(%22dragover%22%2Cover%3D%3Eover.preventDefault())%2Cdocument.body.addEventListener(%22drop%22%2Casync%20drop%3D%3E%7Bdrop.preventDefault()%3Bconst%20data%3Ddrop.dataTransfer%3Bconsole.debug(%22type%22%2C...data.types)%3Blet%20fileList%3Bif(%22undefined%22!%3Dtypeof%20GM%26%260%3D%3Ddata.files.length)%7Blet%20urlList%3Bif(~data.types.indexOf(%22text%2Fhtml%22))%7Bconst%20dom%3DparseHtml(data.getData(%22text%2Fhtml%22))%3BurlList%3Ddom.querySelectorAll(%22img%22)%2Cconsole.debug(%22query%20img%20url%22)%2C0%3D%3DurlList.length%26%26(console.debug(%22no%20image%2C%20query%20anchor%22)%2CurlList%3Ddom.querySelectorAll(%22a%22))%2CurlList%3DArray.from(urlList).map(node%3D%3Enode.src%7C%7Cnode.href)%7D0%3D%3DurlList.length%26%26~data.types.indexOf(%22text%2Fplain%22)%26%26(console.debug(%22no%20url%20found%2C%20try%20plain%20text%22)%2CurlList%3Ddata.getData(%22text%2Fplain%22).split(%22%5Cn%22).filter(u%3D%3E%22%23%22!%3Du.charAt(0)))%3Btry%7BfileList%3Dawait%20Promise.all(urlList.map(fetchFile))%7Dcatch(e)%7Breturn%20void%20console.error(e)%7DfileList%3DcreateFileList(...fileList)%7Delse%20fileList%3Ddrop.dataTransfer.files%3Bconsole.debug(%22file%20list%3A%22%2CfileList)%2CputFileIntoForm(fileList)%7D)%3B%7D()
 
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
+[download-html.bookmarklet.js]: javascript:void%20function%20()%20%7Bfunction%20doctypeToString(node%3Ddocument.doctype)%7Breturn%22%3C!DOCTYPE%20%22%2Bnode.name%2B(node.publicId%3F'%20PUBLIC%20%22'%2Bnode.publicId%2B'%22'%3A%22%22)%2B(!node.publicId%26%26node.systemId%3F%22%20SYSTEM%22%3A%22%22)%2B(node.systemId%3F'%20%22'%2Bnode.systemId%2B'%22'%3A%22%22)%2B%22%3E%22%7Dconst%20html%3DdoctypeToString()%2B%22%5Cn%22%2Bdocument.documentElement.outerHTML%2Cblob%3Dnew%20Blob(%5Bhtml%5D)%2Cdownload%3Ddocument.createElement(%22a%22)%3Bdownload.download%3Ddocument.title%2B%22.html%22%2Cdownload.href%3DURL.createObjectURL(blob)%2Cdocument.body.appendChild(download)%2Cdownload.click()%2Cdownload.remove()%2CURL.revokeObjectURL(blob)%3B%7D()
+
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
 [google search unredirect]: google-search-unredirect.user.js
 [facebook notify]: facebook-notify.user.js

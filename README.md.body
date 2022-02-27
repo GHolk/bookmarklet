@@ -186,6 +186,16 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 
 [google image]: http://www.google.com/imghp
 
+## [儲存頁面 html][download-html.bookmarklet.js]
+將目前網頁的 html 內容儲存為檔案，
+主要是用在一些以 javascript 載入內容的網站。
+因為直接用 wget curl 拿不到東西，只能在瀏覽器裡打開，
+載入完內容後再用小書籤下載下來。
+
+執行後可能會跳出下載視窗，
+下載的檔名預設使用網頁的 title 而不是網址，
+因為網址的重名問題有點嚴重。
+
 ## [paste to form file userscript version][paste-to-form-file.user.js]
 this script allow user to paste or drag file into the file field of form.
 you can:
