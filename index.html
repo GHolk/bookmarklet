@@ -147,12 +147,13 @@ chrome 好像會跳出大量下載的警告，記得勾允許。</p>
 油猴選單 (monkey menu) &gt; paste to form file &gt;
 使用者指令稿選項 (user script options) &gt;
 使用者包含 (include) 或使用者符合 (match) 。</p>
-<h2 id="[儲存頁面-html][download-html.bookmarklet.js]"><a href="javascript:void%20function%20()%20%7Bfunction%20doctypeToString(node%3Ddocument.doctype)%7Breturn%22%3C!DOCTYPE%20%22%2Bnode.name%2B(node.publicId%3F&#39;%20PUBLIC%20%22&#39;%2Bnode.publicId%2B&#39;%22&#39;%3A%22%22)%2B(!node.publicId%26%26node.systemId%3F%22%20SYSTEM%22%3A%22%22)%2B(node.systemId%3F&#39;%20%22&#39;%2Bnode.systemId%2B&#39;%22&#39;%3A%22%22)%2B%22%3E%22%7Dconst%20html%3DdoctypeToString()%2B%22%5Cn%22%2Bdocument.documentElement.outerHTML%2Cblob%3Dnew%20Blob(%5Bhtml%5D)%2Cdownload%3Ddocument.createElement(%22a%22)%3Bdownload.download%3Ddocument.title%2B%22.html%22%2Cdownload.href%3DURL.createObjectURL(blob)%2Cdocument.body.appendChild(download)%2Cdownload.click()%2Cdownload.remove()%2CURL.revokeObjectURL(blob)%3B%7D()">儲存頁面 html</a></h2>
+<h2 id="[儲存頁面-html][download-html.bookmarklet.js]"><a href="javascript:void%20function%20()%20%7Bfunction%20doctypeToString(node%3Ddocument.doctype)%7Breturn%22%3C!DOCTYPE%20%22%2Bnode.name%2B(node.publicId%3F%60%20PUBLIC%20%22%24%7Bnode.publicId%7D%22%60%3A%22%22)%2B(!node.publicId%26%26node.systemId%3F%22%20SYSTEM%22%3A%22%22)%2B(node.systemId%3F%60%20%22%24%7Bnode.systemId%7D%22%60%3A%22%22)%2B%22%3E%22%7Dconst%20html%3DdoctypeToString()%2B%22%5Cn%22%2Bdocument.documentElement.outerHTML%2Cblob%3Dnew%20Blob(%5Bhtml%5D)%2Cdownload%3Ddocument.createElement(%22a%22)%3Bdownload.download%3Ddocument.title%2B%22.html%22%2Cdownload.href%3DURL.createObjectURL(blob)%2Cdocument.body.appendChild(download)%2Cdownload.click()%2Cdownload.remove()%2Calert(%22cleaning%20blob%3F%22)%2CURL.revokeObjectURL(blob)%3B%7D()">儲存頁面 html</a></h2>
 <p>將目前網頁的 html 內容儲存為檔案，
 主要是用在一些以 javascript 載入內容的網站。
 因為直接用 wget curl 拿不到東西，只能在瀏覽器裡打開，
 載入完內容後再用小書籤下載下來。</p>
 <p>執行後可能會跳出下載視窗，
+然後會彈出確認對話框，按確認就會清除暫存的 blob。
 下載的檔名預設使用網頁的 title 而不是網址，
 因為網址的重名問題有點嚴重。</p>
 <h2 id="[paste-to-form-file-userscript-version][paste-to-form-file.user.js]"><a href="paste-to-form-file.user.js">paste to form file userscript version</a></h2>
