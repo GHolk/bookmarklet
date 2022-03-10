@@ -197,6 +197,13 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 下載的檔名預設使用網頁的 title 而不是網址，
 因為網址的重名問題有點嚴重。
 
+## [prompt annotate description]
+用來編輯網頁的 meta description 標籤，
+可以用來幫網頁加註解，然後再用上面的儲存頁面 html 保存，
+或是用 web scrapebook 下載。
+標註的內容會存在 `meta[property="gholk:annotate"]` 的 content 屬性裡。
+會用既有的 description 當作草稿供編輯。
+
 ## [paste to form file userscript version][paste-to-form-file.user.js]
 this script allow user to paste or drag file into the file field of form.
 you can:

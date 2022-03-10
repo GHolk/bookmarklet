@@ -197,6 +197,13 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 下載的檔名預設使用網頁的 title 而不是網址，
 因為網址的重名問題有點嚴重。
 
+## [prompt annotate description]
+用來編輯網頁的 meta description 標籤，
+可以用來幫網頁加註解，然後再用上面的儲存頁面 html 保存，
+或是用 web scrapebook 下載。
+標註的內容會存在 `meta[property="gholk:annotate"]` 的 content 屬性裡。
+會用既有的 description 當作草稿供編輯。
+
 ## [paste to form file userscript version][paste-to-form-file.user.js]
 this script allow user to paste or drag file into the file field of form.
 you can:
@@ -288,6 +295,8 @@ if you want to execute this script in that website.
 
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
 [download-html.bookmarklet.js]: javascript:void%20function%20()%20%7Bfunction%20doctypeToString(node%3Ddocument.doctype)%7Breturn%22%3C!DOCTYPE%20%22%2Bnode.name%2B(node.publicId%3F%60%20PUBLIC%20%22%24%7Bnode.publicId%7D%22%60%3A%22%22)%2B(!node.publicId%26%26node.systemId%3F%22%20SYSTEM%22%3A%22%22)%2B(node.systemId%3F%60%20%22%24%7Bnode.systemId%7D%22%60%3A%22%22)%2B%22%3E%22%7Dconst%20html%3DdoctypeToString()%2B%22%5Cn%22%2Bdocument.documentElement.outerHTML%2Cblob%3Dnew%20Blob(%5Bhtml%5D)%2Cdownload%3Ddocument.createElement(%22a%22)%3Bdownload.download%3Ddocument.title%2B%22.html%22%2Cdownload.href%3DURL.createObjectURL(blob)%2Cdocument.body.appendChild(download)%2Cdownload.click()%2Cdownload.remove()%2Calert(%22cleaning%20blob%3F%22)%2CURL.revokeObjectURL(blob)%3B%7D()
+
+[prompt annotate description]: javascript:void%20function%20()%20%7Bfunction%20%24(selector%2Ccontext)%7Breturn(context%7C%7Cd).querySelector(selector)%7Dfunction%20create(tag%2Cparent)%7Breturn(parent%7C%7Cb).appendChild(d.createElement(tag))%7Dasync%20function%20promptUi(title%2Ctext%3D%22%22)%7Bconst%20dialog%3Ddocument.createElement(%22div%22)%3Bdialog.className%3D%22gholk-prompt-dialog%22%2Ccreate(%22h2%22%2Cdialog).textContent%3Dtitle%3Bconst%20textarea%3Dcreate(%22textarea%22%2Cdialog)%3Btextarea.value%3Dtext%3Bconst%20ok%3Dcreate(%22button%22%2Cdialog)%3Bok.textContent%3D%22ok%22%3Blet%20confirm%2Creject%3Bconst%20promise%3Dnew%20Promise((ok%2Cno)%3D%3E%5Bconfirm%2Creject%5D%3D%5Bok%2Cno%5D)%3Bok.onclick%3D(()%3D%3Econfirm())%3Bconst%20cancel%3Dcreate(%22button%22%2Cdialog)%3Bcancel.textContent%3D%22cancel%22%2Ccancel.onclick%3D(()%3D%3Ereject())%2Ccreate(%22style%22%2Cdialog).textContent%3D%22%5Cn.gholk-prompt-dialog%20%7B%5Cn%20%20%20%20%20%20%20%20position%3A%20fixed%3B%5Cn%20%20%20%20%20%20%20%20top%3A%2030%25%3B%5Cn%20%20%20%20%20%20%20%20left%3A%2030%25%3B%5Cn%20%20%20%20%20%20%20%20width%3A%2040%25%3B%5Cn%20%20%20%20%20%20%20%20height%3A%20auto%3B%5Cn%20%20%20%20%20%20%20%20background%3A%20white%3B%5Cn%20%20%20%20%20%20%20%20padding%3A%201em%3B%5Cn%20%20%20%20%20%20%20%20z-index%3A%209999%3B%5Cn%7D%5Cn.gholk-prompt-dialog%20textarea%20%7B%5Cn%20%20%20%20%20%20%20%20display%3A%20block%3B%5Cn%20%20%20%20%20%20%20%20width%3A%20100%25%3B%5Cn%20%20%20%20%20%20%20%20height%3A%205em%3B%5Cn%7D%5Cn%22%2Cb.appendChild(dialog)%3Btry%7Bawait%20promise%7Dcatch(cancel)%7Breturn%20null%7Dfinally%7Bdialog.remove()%7Dreturn%20textarea.value%7Dfunction%20appendAfter(newNode%2CrefNode)%7Bconsole.log(refNode)%3Bconst%20parent%3DrefNode.parentNode%3BrefNode.nextSibling%3Fparent.insertBefore(newNode%2CrefNode.nextSibling)%3Aparent.appendChild(newNode)%7Dasync%20function%20editDescription()%7Bconst%20q%3D%24('meta%5Bname%3Ddescription%5D%2C%20meta%5Bproperty%3D%22og%3Adescription%22%5D%2C%20meta%5Bproperty%3D%22gholk%3Aannotate%22%5D')%3Blet%20description%3D%22%22%3Bq%26%26(description%3Dq.content)%3Bconst%20result%3Dawait%20promptUi(%22description%22%2Cdescription)%3Bif(result)%7Blet%20annotate%3D%24('meta%5Bproperty%3D%22gholk%3Aannotate%22%5D')%3Bannotate%7C%7C(annotate%3Ddocument.createElement(%22meta%22)).setAttribute(%22property%22%2C%22gholk%3Aannotate%22)%2Cannotate.content%3Dresult%3BappendAfter(annotate%2C%24(%22meta%5Bcharset%5D%22)%7C%7Cd.head.firstChild%7C%7Cd.documentElement.firstChild)%7D%7Dvar%20d%3Ddocument%2Cb%3Dd.body%3BeditDescription()%3B%7D()
 
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
 [google search unredirect]: google-search-unredirect.user.js
