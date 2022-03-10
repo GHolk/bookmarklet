@@ -240,11 +240,14 @@ an easy html player helper script.
 add keyboard short cut for video playing,
 including arrow key right/left to seek/backward 5 second,
 and space to pause/play.
+for mouse, wheel can forward/backward about 5 second every tics,
+and click on video can pause/play the video.
 you need to add the url to *user match* of this script
 if you want to execute this script in that website.
 
 簡單的播放器腳本，幫 html 的 vedio 標籤加上鍵盤快捷鍵，
 包含左右鍵來倒退、前進 5 秒，還有空白鍵來暫停、播放。
+滑鼠滾輪也可以倒退、前進大約 5 秒，點擊影片則可以暫停、播放。
 本腳本預期可以在任何播放器中執行，
 所以你可以將任意網站的網址加入此腳本的 *使用者符合* 列表中，
 以在該網站的影片中加入鍵盤快捷鍵功能；
