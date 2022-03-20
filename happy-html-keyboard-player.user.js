@@ -5,11 +5,31 @@
 // @match https://www.ptsplus.tv/season/*
 // @match https://ecollege.elearn.hrd.gov.tw/learn/path/player.php?*
 // @match https://lcms.elearn.hrd.gov.tw/asset/play/*
-// @version  2.0.0
+// @match https://ecollege.elearn.hrd.gov.tw/base/*/course/*.html
+// @match https://www.youtube.com/watch?*
+// @version  2.3.1
 // @grant  none
 // ==/UserScript==
 
 const config = {
+    global: {
+        // leave undefined work as false
+        disable: {
+            click: true,
+            keyboard: false,
+            wheel: false
+        },
+        // make wheel and click work on whole page
+        whole_page: false,
+        stepSecond: 5, // second fore/backward when arrow or wheel
+        getVideo() {
+            return document.querySelector('video')
+        },
+        // callback executed with setInterval 200 ms, return done to stop it.
+        callback() {
+            return 'done'
+        }
+    },
     '公視勇者動畫系列': {
         regexp: /4b572dd5-bdc7-45a6-ba35-accfe9cda3df/,
         callback() {
@@ -37,13 +57,18 @@ const config = {
             return 'done'
         }
     },
-    global: {
+    youtube: {
+        regexp: /youtube.com/,
         disable: {
-            click: true
-        },
-        stepSecond: 5,
-        getVideo() {
-            return document.querySelector('video')
+            click: true,
+            keyboard: true
+        }
+    },
+    elearn_gov: {
+        regexp: /elearn.hrd.gov.tw/,
+        callback() {
+            window.focus()
+            return 'done'
         }
     },
     current: {
@@ -71,6 +96,7 @@ function configSet() {
             window.location.href.match(option.regexp)) {
             if (option.callback) keepTry(option.callback)
             Object.assign(config.current, option)
+            console.debug(`apply config ${key}`)
         }
     }
 }
@@ -90,8 +116,11 @@ function togglePlay(video = config.current.getVideo()) {
     else video.pause()
 }
 window.addEventListener('keydown', event => {
+    if (config.current.disable.keyboard) return
     const video = config.current.getVideo()
     const step = config.current.stepSecond
+
+    console.debug(`get '${event.key}'`)
     switch (event.key) {
     case 'ArrowRight':
     case 'Right':
@@ -101,8 +130,7 @@ window.addEventListener('keydown', event => {
     case 'Left':
         video.currentTime -= step
         break
-    case ' ':
-        console.debug('space get')
+    case ' ': // space
         if (config.current.disable.space) break
         event.preventDefault()
         togglePlay(video)
@@ -117,11 +145,12 @@ window.addEventListener('click', event => {
     if (config.current.disable.click || config.current.getVideo().currentTime == 0) return
     console.debug('get click')
     if (isVideoEvent(event)) togglePlay()
-})
+}, {capture: true})
 window.addEventListener('wheel', event => {
     if (config.current.disable.wheel) return
     console.debug('get wheel')
     if (isVideoEvent(event)) {
+        event.preventDefault()
         config.current.getVideo().currentTime += event.deltaY / 100 * config.current.stepSecond
     }
-})
+}, {passive: false})
