@@ -7,6 +7,7 @@
 // @match https://lcms.elearn.hrd.gov.tw/asset/play/*
 // @match https://ecollege.elearn.hrd.gov.tw/base/*/course/*.html
 // @match https://www.youtube.com/watch?*
+// @match https://www.bilibili.com/video/*
 // @version  2.3.1
 // @grant  none
 // ==/UserScript==
@@ -57,8 +58,8 @@ const config = {
             return 'done'
         }
     },
-    youtube: {
-        regexp: /youtube.com/,
+    wheel_only: {
+        regexp: /youtube.com|www.bilibili/,
         disable: {
             click: true,
             keyboard: true
@@ -139,7 +140,14 @@ window.addEventListener('keydown', event => {
 })
 function isVideoEvent(event) {
     if (config.current.whole_page) return true
-    else return event.target.nodeName == 'VIDEO'
+    else if (event.target.nodeName == 'VIDEO') return true
+    else {
+        const x = event.clientX
+        const y = event.clientY
+        const box = config.current.getVideo().getBoundingClientRect()
+        return (box.x <= x && x <= box.x + box.width &&
+            box.y <= y && y <= box.y + box.height)
+    }
 }
 window.addEventListener('click', event => {
     if (config.current.disable.click || config.current.getVideo().currentTime == 0) return
