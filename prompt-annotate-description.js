@@ -78,7 +78,16 @@ async function editDescription() {
         annotate.content = result
         const first = $('meta[charset]') || d.head.firstChild || d.documentElement.firstChild
         appendAfter(annotate, first)
+        const urlTag = createUrlTag()
+        if (urlTag) appendAfter(urlTag, first)
     }
+}
+function createUrlTag(url = window.location.href) {
+    if ($('meta[property="gholk:canonical"]')) return null
+    const tag = document.createElement('meta')
+    tag.setAttribute('property', 'gholk:canonical')
+    tag.setAttribute('content', url)
+    return tag
 }
 
 editDescription()
