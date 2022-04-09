@@ -3,9 +3,23 @@
 letify() {
     local indent_js
     indent_js="$1"
-    echo -n 'void function () {'
-    uglifyjs -c <$indent_js | tr -d '\n'
-    echo '}()'
+    if [ -n "$TRIDACTYL_CLEAN" ] && [ "$TRIDACTYL_CLEAN" != 0 ]
+    then
+        {
+            echo 'void function () {'
+            echo 'function main() {'
+            cat $indent_js
+            echo '}'
+            cat tridactyl-clean-run.js
+            echo '}()'
+        } | uglifyjs
+        # compress will translate void into `!`
+        # which break bookmarklet
+    else
+        echo -n 'void function () {'
+        uglifyjs -c <$indent_js | tr -d '\n'
+        echo '}()'
+    fi
 }
 
 encode_js_url() {

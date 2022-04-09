@@ -2,6 +2,7 @@
 all: README.md index.html
 
 html_bookmarklet = screen-message.html
+tridactyl_clean_list = download-html.js prompt-annotate-description.js
 
 bbsjs.bookmarklet.js: bbsjs.user.js
 	sh bookmarkletify.sh $< > $@
@@ -10,6 +11,9 @@ bbsjs.bookmarklet.js: bbsjs.user.js
 	sh bookmarkletify.sh $< > $@
 
 %.bookmarklet.js: %.js
+	if expr "$(tridactyl_clean_list)" : $< >/dev/null && \
+	[ -z "$$TRIDACTYL_CLEAN" ] ; \
+	then export TRIDACTYL_CLEAN=1; fi; \
 	sh bookmarkletify.sh $< > $@
 
 paste-to-form-file.bookmarklet.js: paste-to-form-file.user.js

@@ -266,3 +266,10 @@ if you want to execute this script in that website.
 
 [ptsplus.tv]: https://www.ptsplus.tv/
 [勇者動畫系列]: https://www.ptsplus.tv/season/4b572dd5-bdc7-45a6-ba35-accfe9cda3df
+
+<script>
+document.querySelectorAll('a').forEach(a => {
+    a.href = a.href.replace(/(%[a-fA-F0-9]{2})+/g, c => decodeURIComponent(c))
+})
+</script>
+
