@@ -11,18 +11,21 @@ function create(tag, parent) {
 }
 
 async function promptUi(title, text = '') {
-    const dialog = document.createElement('div')
+    const dialog = document.createElement('div') // use <dialog> ?
     dialog.className = 'gholk-prompt-dialog'
     create('h2', dialog).textContent = title
     const textarea = create('textarea', dialog)
     textarea.value = text
-    // confirm when ctrl-enter
     const ok = create('button', dialog)
     ok.textContent = 'ok'
     let confirm
     let reject
     const promise = new Promise((ok,no) => [confirm, reject] = [ok,no])
     ok.onclick = () => confirm()
+    // confirm when ctrl-enter
+    textarea.addEventListener('keypress', e => {
+        if (e.key == 'Enter' && e.ctrlKey) confirm()
+    })
     const cancel = create('button', dialog)
     cancel.textContent = 'cancel'
     cancel.onclick = () => reject()
@@ -44,6 +47,7 @@ async function promptUi(title, text = '') {
 }
 `
     b.appendChild(dialog)
+    textarea.focus()
     try {
         await promise
     }
@@ -56,7 +60,6 @@ async function promptUi(title, text = '') {
     return textarea.value
 }
 function appendAfter(newNode, refNode) {
-    console.log(refNode)
     const parent = refNode.parentNode
     if (refNode.nextSibling) parent.insertBefore(newNode, refNode.nextSibling)
     else parent.appendChild(newNode)
