@@ -22,13 +22,23 @@ async function promptUi(title, text = '') {
     let reject
     const promise = new Promise((ok,no) => [confirm, reject] = [ok,no])
     ok.onclick = () => confirm()
-    // confirm when ctrl-enter
-    textarea.addEventListener('keypress', e => {
-        if (e.key == 'Enter' && e.ctrlKey) confirm()
-    })
     const cancel = create('button', dialog)
     cancel.textContent = 'cancel'
     cancel.onclick = () => reject()
+    const download = create('button', dialog)
+    download.onclick = () => {
+        confirm()
+        setTimeout(downloadHtml, 200)
+    }
+    download.textContent = 'download'
+    // confirm when ctrl-enter
+    textarea.addEventListener('keydown', e => {
+        if (e.key == 'Enter' && e.ctrlKey) confirm()
+        else if (e.key == 's' && e.ctrlKey) {
+            e.preventDefault()
+            download.click()
+        }
+    })
     create('style', dialog).textContent = `
 .gholk-prompt-dialog {
         position: fixed;
@@ -79,7 +89,10 @@ async function editDescription() {
             annotate.setAttribute('property', 'gholk:annotate')
         }
         annotate.content = result
-        const first = $('meta[charset]') || d.head.firstChild || d.documentElement.firstChild
+        // or just head.appendChild() ?
+        const first = $('meta[charset]') ||
+              $('meta[http-equiv = content-type]') ||
+              d.head.firstChild || d.documentElement.firstChild
         appendAfter(annotate, first)
         const urlTag = createUrlTag()
         if (urlTag) appendAfter(urlTag, first)
@@ -91,6 +104,25 @@ function createUrlTag(url = window.location.href) {
     tag.setAttribute('property', 'gholk:canonical')
     tag.setAttribute('content', url)
     return tag
+}
+function downloadHtml() {
+    function doctypeToString(node = document.doctype) {
+        return '<!DOCTYPE ' + node.name
+            + (node.publicId ? ` PUBLIC "${node.publicId}"` : '')
+            + (!node.publicId && node.systemId ? ' SYSTEM' : '')
+            + (node.systemId ? ` "${node.systemId}"` : '')
+            + '>'
+    }
+    const html = doctypeToString() + '\n' + document.documentElement.outerHTML
+    const blob = new Blob([html])
+    const download = document.createElement('a')
+    download.download = document.title + '.html'
+    download.href = URL.createObjectURL(blob)
+    document.body.appendChild(download)
+    download.click()
+    download.remove()
+    alert('cleaning blob?')
+    URL.revokeObjectURL(blob)
 }
 
 editDescription()
