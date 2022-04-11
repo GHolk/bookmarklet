@@ -4,6 +4,9 @@ var d = document,
 function $(selector, context) {
     return (context || d).querySelector(selector)
 }
+function $$(selector, context) {
+    return (context || d).querySelectorAll(selector)
+}
 
 function create(tag, parent) {
     const elm = (parent || b).appendChild( d.createElement(tag) );
@@ -74,13 +77,23 @@ function appendAfter(newNode, refNode) {
     if (refNode.nextSibling) parent.insertBefore(newNode, refNode.nextSibling)
     else parent.appendChild(newNode)
 }
-async function editDescription() {
-    const q = $('meta[name=description], meta[property="og:description"], meta[property="gholk:annotate"]')
-    let description = ''
-    if (q) {
-        description = q.content
+function findDescription() {
+    const icaseMatch = `
+        property=gholk:annotate name=description
+        property=og:description name=twitter:description
+    `.trim().split(/\s+/).map(r => r.split('='))
+    const metaList = Array.from($$('meta'))
+    for (const [attr, value] of icaseMatch) {
+        const match = metaList.find(
+            e => (new RegExp(value, 'i')).test(e.getAttribute(attr))
+        )
+        if (match) return match.content
     }
-
+    if ($('p')) return $('p').textContent
+    else return ''
+}
+async function editDescription() {
+    const description = findDescription()
     const result = await promptUi('description', description)
     if (result) {
         let annotate = $('meta[property="gholk:annotate"]')
@@ -92,6 +105,7 @@ async function editDescription() {
         // or just head.appendChild() ?
         const first = $('meta[charset]') ||
               $('meta[http-equiv = content-type]') ||
+              $('meta[http-equiv = Content-Type]') ||
               d.head.firstChild || d.documentElement.firstChild
         appendAfter(annotate, first)
         const urlTag = createUrlTag()

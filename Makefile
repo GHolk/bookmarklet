@@ -11,7 +11,7 @@ bbsjs.bookmarklet.js: bbsjs.user.js
 	sh bookmarkletify.sh $< > $@
 
 %.bookmarklet.js: %.js
-	if expr "$(tridactyl_clean_list)" : $< >/dev/null && \
+	if expr "$(tridactyl_clean_list)" : ".*$<" >/dev/null && \
 	[ -z "$$TRIDACTYL_CLEAN" ] ; \
 	then export TRIDACTYL_CLEAN=1; fi; \
 	sh bookmarkletify.sh $< > $@
