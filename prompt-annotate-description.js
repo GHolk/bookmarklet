@@ -87,7 +87,7 @@ function findDescription() {
         const match = metaList.find(
             e => (new RegExp(value, 'i')).test(e.getAttribute(attr))
         )
-        if (match) return match.content
+        if (match && match.content) return match.content
     }
     if ($('p')) return $('p').textContent
     else return ''

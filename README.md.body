@@ -199,10 +199,13 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 
 ## [prompt annotate description]
 用來編輯網頁的 meta description 標籤，
-可以用來幫網頁加註解，然後再用上面的 download 保存，
-或是用 web scrapebook 下載。
+可以用來幫網頁加註解，然後 download html，或是用 web scrapebook 下載。
 標註的內容會存在 `meta[property="gholk:annotate"]` 的 content 屬性裡。
 會用既有的 description 當作草稿供編輯。
+
+在編輯框中， `Ctrl-Enter` 可以確認並關閉編輯框，相當於 ok 的按鈕；
+`Ctrl-s` 可以確認並儲存 html，相當於 download 的按鈕，
+儲存 html 的功能與上面的 *儲存頁面 html* 效果相同。
 
 ## [paste to form file userscript version][paste-to-form-file.user.js]
 this script allow user to paste or drag file into the file field of form.
