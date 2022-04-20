@@ -139,6 +139,16 @@ chrome 好像會跳出大量下載的警告，記得勾允許。
 但在 anchor 裡直接放 data url 好像不能直接點擊開啟。
 但拖曳到書籤或右鍵加入書籤後，點擊還是可以運作。
 
+## [map alpha to number pad]
+將鍵盤的 `azxcsdfwer` 映射成數字鍵 `0-9` 的腳本。
+在設定中的 `url-match-map` 裡指定在哪些網址中的哪些輸入框裡要啟動映射。
+url-match-map 是一個陣列的陣列，
+例如 `['gholk-enable-map-alpha-to-number-pad', 'input']`
+就是在網址符合 regexp `gholk-enable-map-alpha-to-number-pad` 時，
+如果輸入框符合 `input` css 選擇器，就會將 `azxcsdfwer` 映射為數字鍵。
+此外，當然還要把該網址加到油猴腳本的 `@match` 裡，
+或是用選單中的 user-include，在不修改原始標頭的情況下加入。
+
 ## [e3new grade]
 一次將全班的成績全部輸入進交通大學 new e3 教學網站中的評分表格。
 

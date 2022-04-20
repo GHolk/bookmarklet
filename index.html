@@ -106,6 +106,15 @@ chrome 好像會跳出大量下載的警告，記得勾允許。</p>
 <p>我是包成 data url 的形式，
 但在 anchor 裡直接放 data url 好像不能直接點擊開啟。
 但拖曳到書籤或右鍵加入書籤後，點擊還是可以運作。</p>
+<h2 id="[map-alpha-to-number-pad]"><a href="map-alpha-to-number-pad.user.js">map alpha to number pad</a></h2>
+<p>將鍵盤的 <code>azxcsdfwer</code> 映射成數字鍵 <code>0-9</code> 的腳本。
+在設定中的 <code>url-match-map</code> 裡指定在哪些網址中的哪些輸入框裡要啟動映射。
+url-match-map 是一個陣列的陣列，
+例如 <code>[&#39;gholk-enable-map-alpha-to-number-pad&#39;, &#39;input&#39;]</code>
+就是在網址符合 regexp <code>gholk-enable-map-alpha-to-number-pad</code> 時，
+如果輸入框符合 <code>input</code> css 選擇器，就會將 <code>azxcsdfwer</code> 映射為數字鍵。
+此外，當然還要把該網址加到油猴腳本的 <code>@match</code> 裡，
+或是用選單中的 user-include，在不修改原始標頭的情況下加入。</p>
 <h2 id="[e3new-grade]"><a href="javascript:void%20function%20()%20%7Bfunction%20userClick()%7Breturn%20alert(%22please%20click%20the%20column%20you%20want%20to%20grade%22)%2Cnew%20Promise(resolve%3D%3E%7Bwindow.addEventListener(%22click%22%2Cclick%3D%3Eresolve(click.target)%2C%7Bonce%3A!0%7D)%7D)%7Dfunction%20findAcient(node%2CtestSelector)%7Blet%20test%3Bfor(test%3D%22string%22%3D%3Dtypeof%20testSelector%3Fnode%3D%3Enode.matches(testSelector)%3AtestSelector%3Bnode%3B)%7Bif(test(node))return%20node%3Bnode%3Dnode.parentNode%7Dreturn%20null%7Dfunction%20getScoreList()%7Breturn%20prompt(%22please%20input%20score%20seperated%20by%20space%22).split(%2F%5Cs%2Fg)%7Dasync%20function%20main()%7Bconst%20cell%3DfindAcient(await%20userClick()%2C%22td%22)%2CinputSelector%3D%60td%3Anth-child(%24%7Bcell.cellIndex%2B1%7D)%20input%60%2CinputList%3DfindAcient(cell%2C%22table%22).querySelectorAll(inputSelector)%2CscoreList%3Dawait%20getScoreList()%3Bfor(let%20i%3D0%3Bi%3CinputList.length%3Bi%2B%2B)%7BinputList%5Bi%5D.value%3DscoreList%5Bi%5D%7D%7Dmain()%3B%7D()">e3new grade</a></h2>
 <p>一次將全班的成績全部輸入進交通大學 new e3 教學網站中的評分表格。</p>
 <ol>
