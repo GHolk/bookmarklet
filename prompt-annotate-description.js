@@ -1,3 +1,5 @@
+var d = document,
+    b = d.body;
 
 function $(selector, context) {
     return (context || d).querySelector(selector)
