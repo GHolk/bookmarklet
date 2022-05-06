@@ -173,6 +173,9 @@ url-match-map 是一個陣列的陣列，
 <p>在編輯框中， <code>Ctrl-Enter</code> 可以確認並關閉編輯框，相當於 ok 的按鈕；
 <code>Ctrl-s</code> 可以確認並儲存 html，相當於 download 的按鈕，
 儲存 html 的功能與上面的 <em>儲存頁面 html</em> 效果相同。</p>
+<h2 id="[github-fork-compare]"><a href="javascript:void%20function%20()%20%7B(async()%3D%3E%7Bconst%20aTags%3D%5B...document.querySelectorAll(%22div.repo%20a%3Alast-of-type%22)%5D.slice(1)%3Bfor(const%20aTag%20of%20aTags)await%20fetch(aTag.href).then(x%3D%3Ex.text()).then(html%3D%3EaTag.outerHTML%2B%3D%60%24%7Bhtml.match(%2FThis%20branch%20is.*%2F).pop().replace(%22This%20branch%20is%22%2C%22%22).replace(%2F(%5B0-9%5D%2B%20commits%3F%20ahead)%2F%2C&#39;%3Cfont%20color%3D%22%230c0%22%3E%241%3C%2Ffont%3E&#39;).replace(%2F(%5B0-9%5D%2B%20commits%3F%20behind)%2F%2C&#39;%3Cfont%20color%3D%22red%22%3E%241%3C%2Ffont%3E&#39;)%7D%60).catch(console.error)%7D)()%3B%7D()">github fork compare</a></h2>
+<p>Execute in <code>https://github.com/*/*/network/members</code> to show
+each fork is ahead or behind the original repository.</p>
 <h2 id="[paste-to-form-file-userscript-version][paste-to-form-file.user.js]"><a href="paste-to-form-file.user.js">paste to form file userscript version</a></h2>
 <p>this script allow user to paste or drag file into the file field of form.
 you can:</p>

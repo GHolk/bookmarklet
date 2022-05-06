@@ -217,6 +217,10 @@ url-match-map 是一個陣列的陣列，
 `Ctrl-s` 可以確認並儲存 html，相當於 download 的按鈕，
 儲存 html 的功能與上面的 *儲存頁面 html* 效果相同。
 
+## [github fork compare]
+Execute in `https://github.com/*/*/network/members` to show
+each fork is ahead or behind the original repository.
+
 ## [paste to form file userscript version][paste-to-form-file.user.js]
 this script allow user to paste or drag file into the file field of form.
 you can:
