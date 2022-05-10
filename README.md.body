@@ -241,6 +241,55 @@ so you can paste/drop file into the form.
 (this script only run in [google image search][google image] default.
 you need to manually add other url.)
 
+## [msrt ccf dice tool]
+This bookmarklet allow you to roll multiple dices
+and sort them in [Web TRPG platform CCF][ccf] .
+
+[ccf]: https://ccfolia.com
+
+click the bookmarklet in CCF's room,
+and there will show up a button named *msrt*
+next to the *send* button.
+
+In message box, input dice command in first line,
+and character names in second line.
+both command are splited by space or tab.
+multiple space or tab are ignored.
+
+```
+2D6+3 2D6+1 2D6-3 1D6+2
+alice bob   chard denis
+staff before last line will be ignored
+...
+#sort
+```
+
+then click *msrt* button,
+and this tool, MSRT will format and send the dice command.
+
+the sent command is like:
+
+```
+(2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)
+2D6+3 2D6+1 2D6-3 1D6+2
+alice bob   chard denis
+staff before last line will be ignored
+...
+#sort
+ ((2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)) ＞ (8[4,4]+3)+(5[2,3]+1)+(6[2,4]-3)+(1[1]+2) ＞ 23
+```
+
+the last line is the result of the dices,
+which will only show up after sent.
+
+after the dice result show up, MSRT will parse the result and
+send the order in second message.
+
+```
+alice(11) > bob(6) > chard(3) > denis(3)
+```
+
+
 ## [google search unredirect]
 this user script will remove redirect link in google search result page,
 so you can copy the link directly on google search result page,

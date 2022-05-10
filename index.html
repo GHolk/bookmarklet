@@ -195,7 +195,37 @@ userscript include or userscript match)
 so you can paste/drop file into the form.
 (this script only run in <a href="http://www.google.com/imghp">google image search</a> default.
 you need to manually add other url.)</p>
-<h2 id="[google-search-unredirect]"><a href="google-search-unredirect.user.js">google search unredirect</a></h2>
+<h2 id="[msrt-ccf-dice-tool]"><a href="javascript:void%20function%20()%20%7Bconst%20dicer%3Dwindow%5B%22msrt-ccf-dicer%22%5D%3D%7Binit()%7Bthis.inputId%3D%22downshift-0-input%22%2Cthis.messageSelector%3D%22.MuiListItem-root.MuiListItem-gutters%20p%22%2Cthis.diceResultSelector%3D%22span.MuiTypography-colorTextSecondary%2C%20span%22%2Cthis.helpText%3D%22%5Cnexample%3A%5Cn2D6%2B3%202D6%2B1%202D6-3%201D6%2B2%5Cnalice%20bob%20%20%20chard%20denis%5Cnstaff%20before%20last%20line%20will%20be%20ignored%5Cn...%5Cn%23sort%5Cn%5Cnand%20click%20%60msrt%60%20button%5Cn%22%2Cthis.addButton()%7D%2CgetText()%7Breturn%20document.getElementById(this.inputId).value%7D%2CcheckFormat%3As%3D%3Es.split(%2F%5Cn%2F).some(l%3D%3E%2F%5E%23sort%2F.test(l))%2Cdispatch(node%2Cname)%7Bconst%20event%3Dnew%20Event(name%2C%7Bbubbles%3A!0%7D)%3Bevent.isTrust%3D!0%2Cnode.dispatchEvent(event)%7D%2CsetNativeValue(element%2Cvalue)%7Bconst%20valueSetter%3DObject.getOwnPropertyDescriptor(element%2C%22value%22).set%2Cprototype%3DObject.getPrototypeOf(element)%2CprototypeValueSetter%3DObject.getOwnPropertyDescriptor(prototype%2C%22value%22).set%3BvalueSetter%26%26valueSetter!%3D%3DprototypeValueSetter%3FprototypeValueSetter.call(element%2Cvalue)%3AvalueSetter.call(element%2Cvalue)%7D%2CputText(s)%7Bconst%20node%3Ddocument.getElementById(this.inputId)%3Bthis.setNativeValue(node%2Cs)%2Cthis.dispatch(node%2C%22change%22)%7D%2Csend()%7Bdocument.querySelector(%22button%5Btype%3Dsubmit%5D%22).click()%7D%2Csleep%3Asecond%3D%3Enew%20Promise(wake%3D%3EsetTimeout(wake%2C1e3*second))%2CgetLastMessage()%7Bconst%20list%3Ddocument.querySelectorAll(this.messageSelector)%3Breturn%20list%5Blist.length-1%5D%7D%2Casync%20waitRoll()%7Bconst%20lastOrigin%3Dthis.getLastMessage()%3Bfor(%3B%3B)%7Bawait%20this.sleep(1)%3Bconst%20last%3Dthis.getLastMessage()%3Bif(last!%3DlastOrigin%26%26this.checkFormat(last.textContent))return%20last%7D%7D%2CparseDiceBracket(node)%7Bconst%20text%3Dnode.querySelector(this.diceResultSelector).textContent%2Cscan%3Dtext.match(%2F%5C(%5B%5Cd%2C%2B%5C%5B%5C%5D%5C-%5D%2B%5C)%2Fg)%3Breturn%20scan%3Fscan.map(s%3D%3Es.replace(%2F%5C%5B.*%5C%5D%2F%2C%22%22)).map(s%3D%3Eeval(s))%3Anull%7D%2CnormalizeLine(text)%7Bconst%20line%3Dtext.split(%22%5Cn%22).map(s%3D%3Es.trim())%3Bif(line%5B0%5D.match(%22%20%22))%7Bconst%20diceCode%3Dline%5B0%5D.split(%2F%5Cs%2B%2F).map(d%3D%3E%60(%24%7Bd%7D)%60).join(%22%2B%22)%3Bline.unshift(diceCode)%7Dreturn%2F%23sort%2F.test(text)%7C%7Cline.push(%22%23sort%22)%2Cline%7D%2ChandleError()%7Balert(%22format%20wrong%5Cn%22%2Bthis.helpText)%7D%2Casync%20run()%7Bconst%20text%3Dthis.getText().trim()%3Bif(!text)throw%20new%20Error(%22empty%20input%22)%3Bconst%20line%3Dthis.normalizeLine(text)%2CunitList%3Dline%5B2%5D.split(%2F%5Cs%2B%2F).map(u%3D%3E%5Bu%5D)%3Bthis.putText(line.join(%22%5Cn%22)%2B%22%5Cn%22)%2Cthis.send()%3Bconst%20roll%3Dawait%20this.waitRoll()%2CdiceResult%3Dthis.parseDiceBracket(roll)%3BunitList.forEach((a%2Ci)%3D%3Ea.push(diceResult%5Bi%5D))%2CunitList.sort((x%2Cy)%3D%3Ey%5B1%5D-x%5B1%5D)%2Cthis.putText(unitList.map(a%3D%3E%60%24%7Ba%5B0%5D%7D(%24%7Ba%5B1%5D%7D)%60).join(%22%20%3E%20%22))%2Cthis.send()%7D%2CaddButton()%7Bconst%20b%3Ddocument.createElement(%22button%22)%3Bb.type%3D%22button%22%2Cb.textContent%3D%22msrt%22%2Cb.className%3D%22MuiButtonBase-root%20MuiButton-root%20MuiButton-text%20MuiButton-textSizeSmall%20MuiButton-sizeSmall%22%2Cb.onclick%3D(()%3D%3Ethis.run().catch(error%3D%3E%7Balert(String(error))%2Cthis.handleError()%7D))%2Cdocument.querySelector(%22button%5Btype%3Dsubmit%5D%22).parentNode.appendChild(b)%7D%7D%3Bdicer.init()%3B%7D()">msrt ccf dice tool</a></h2>
+<p>This bookmarklet allow you to roll multiple dices
+and sort them in <a href="https://ccfolia.com">Web TRPG platform CCF</a> .</p>
+<p>click the bookmarklet in CCF&#39;s room,
+and there will show up a button named <em>msrt</em>
+next to the <em>send</em> button.</p>
+<p>In message box, input dice command in first line,
+and character names in second line.
+both command are splited by space or tab.
+multiple space or tab are ignored.</p>
+<pre><code>2D6+3 2D6+1 2D6-3 1D6+2
+alice bob   chard denis
+staff before last line will be ignored
+...
+#sort
+</code></pre><p>then click <em>msrt</em> button,
+and this tool, MSRT will format and send the dice command.</p>
+<p>the sent command is like:</p>
+<pre><code>(2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)
+2D6+3 2D6+1 2D6-3 1D6+2
+alice bob   chard denis
+staff before last line will be ignored
+...
+#sort
+ ((2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)) ＞ (8[4,4]+3)+(5[2,3]+1)+(6[2,4]-3)+(1[1]+2) ＞ 23
+</code></pre><p>the last line is the result of the dices,
+which will only show up after sent.</p>
+<p>after the dice result show up, MSRT will parse the result and
+send the order in second message.</p>
+<pre><code>alice(11) &gt; bob(6) &gt; chard(3) &gt; denis(3)
+</code></pre><h2 id="[google-search-unredirect]"><a href="google-search-unredirect.user.js">google search unredirect</a></h2>
 <p>this user script will remove redirect link in google search result page,
 so you can copy the link directly on google search result page,
 and link to page without redirected by google.</p>
