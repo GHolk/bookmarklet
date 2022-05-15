@@ -21,7 +21,7 @@ and click \`msrt\` button
     },
     checkFormat(s) {
         const line = s.split(/\n/)
-        return line.some(l => /^#sort/.test(l))
+        return (line.length >= 3) && line.some(l => /^#sort/.test(l))
     },
     dispatch(node, name) {
         const event = new Event(name, {bubbles: true})
@@ -77,12 +77,11 @@ and click \`msrt\` button
     },
     normalizeLine(text) {
         const line = text.split('\n').map(s => s.trim())
+        let hide = ''
+        if (line[line.length - 1].match('#hide')) hide = 'S'
         if (line[0].match(' ')) {
             const diceCode = line[0].split(/\s+/).map(d => `(${d})`).join('+')
-            line.unshift(diceCode)
-        }
-        if (!/#sort/.test(text)) {
-            line.push('#sort')
+            line.unshift(hide + diceCode)
         }
         return line
     },
@@ -92,7 +91,7 @@ and click \`msrt\` button
     async run() {
         const text = this.getText().trim()
         if (!text) throw new Error('empty input')
-        // if (!this.checkFormat(text)) throw new Error('format wrong')
+        if (!this.checkFormat(text)) throw new Error('format wrong')
         const line = this.normalizeLine(text)
         const unitList = line[2].split(/\s+/).map(u => [u])
 
@@ -104,10 +103,10 @@ and click \`msrt\` button
         unitList.forEach((a, i) => a.push(diceResult[i]))
         unitList.sort((x, y) => y[1] - x[1])
         this.putText(
-            // TODO: put content text in result?
-            unitList.map(a => `${a[0]}(${a[1]})`).join(' > ')
+            unitList.map(([n, v]) => `${n}(${n.match('#S') ? '#' : v})`)
+                .join(' > ') +
+                '\n' + line.slice(3, -1).join('\n')
         )
-        this.send()        
     },
     addButton() {
         const b = document.createElement('button')

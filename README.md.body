@@ -28,6 +28,14 @@ img[alt="drag bookmarklet vedio"] {
   border: solid 1px;
   height: 15em;
 }
+code {
+  border: 1px solid;
+  padding: 0 0.2em;
+}
+pre > code {
+  display: block;
+  padding: 0.8em;
+}
 </style>
 
 ## 訂閱
@@ -255,12 +263,16 @@ In message box, input dice command in first line,
 and character names in second line.
 both command are splited by space or tab.
 multiple space or tab are ignored.
+the third and following line will be ignored.
+you can input some comment about the dices here.
+the last line must contain `#sort` to indicate
+that this is a sort command message.
 
 ```
 2D6+3 2D6+1 2D6-3 1D6+2
 alice bob   chard denis
-staff before last line will be ignored
-...
+battle agile order
+first round in basement
 #sort
 ```
 
@@ -273,8 +285,8 @@ the sent command is like:
 (2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)
 2D6+3 2D6+1 2D6-3 1D6+2
 alice bob   chard denis
-staff before last line will be ignored
-...
+battle agile order
+first round in basement
 #sort
  ((2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)) ＞ (8[4,4]+3)+(5[2,3]+1)+(6[2,4]-3)+(1[1]+2) ＞ 23
 ```
@@ -282,13 +294,72 @@ staff before last line will be ignored
 the last line is the result of the dices,
 which will only show up after sent.
 
+if the last line is `#sort #hide`,
+the message will not show up to the other players.
+this help hiding enemy's abilities detail.
+
 after the dice result show up, MSRT will parse the result and
-send the order in second message.
+fill the order in input box.
+the comment will also append to the order.
 
 ```
 alice(11) > bob(6) > chard(3) > denis(3)
+battle agile order
+first round in basement
 ```
 
+### 中文說明
+這是用在 [網頁 TRPG 平台 ccfolia][ccf] 的擲骰小工具，
+目前可以讓使用者一次丟多個丟多個骰子並排序。
+在 ccf 房間中點擊此小書籤後，
+會在對話框的發送按鈕旁出現一個 `MSRT` 按鈕。
+
+要進行排序的話，
+在對話框中第一行輸入以空白分隔的數值的組合，
+第二行則輸入各組合的名稱，
+多個空白會被壓縮為一個。
+第三行開始可以輸入任意行的任意文字作為說明，
+最行一行則只能有 `#sort` 關鍵字。
+範例：
+
+```
+2D6+3 2D6+1 2D6-3 1D6+2
+哈利  榮恩  妙麗  露娜
+霍格華茲五年級生決鬥實力
+一對一決鬥條件下
+#sort
+```
+
+接著按下 `MSRT` 按鈕，
+此工具即會把文字調整為如下格式並發送：
+
+```
+(2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)
+2D6+3 2D6+1 2D6-3 1D6+2
+哈利  榮恩  妙麗  露娜
+霍格華茲五年級生決鬥實力
+一對一決鬥條件下
+#sort
+ ((2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)) ＞ (8[4,4]+3)+(5[2,3]+1)+(6[2,4]-3)+(1[1]+2) ＞ 23
+```
+
+其中最一行是擲骰結果，是發送後 ccf 系統自動產生的。
+
+若希望隱藏擲骰結果，在最後一行則要改為輸入 `#sort #hide` ，
+這樣就會變成丟只有自己看的到的祕密骰。
+ccf 的祕密骰是整則訊息都會隱藏，不只有擲骰結果。
+
+在送出訊息並系統顯示出擲骰結果後，本工具就會依顯示的結果，
+在文字輸入框中填入排列好的結果，
+使用者可以調整訊息內容或直接送出。
+同時作為說明的文字內容也會自動帶入。
+範例：
+
+```
+哈利(11) > 榮恩(6) > 妙麗(3) > 靈娜(3)
+霍格華茲五年級生決鬥實力
+一對一決鬥條件下
+```
 
 ## [google search unredirect]
 this user script will remove redirect link in google search result page,

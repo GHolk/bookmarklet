@@ -28,6 +28,14 @@ img[alt="drag bookmarklet vedio"] {
   border: solid 1px;
   height: 15em;
 }
+code {
+  border: 1px solid;
+  padding: 0 0.2em;
+}
+pre > code {
+  display: block;
+  padding: 0.8em;
+}
 </style>
 
 ## 訂閱
@@ -255,12 +263,16 @@ In message box, input dice command in first line,
 and character names in second line.
 both command are splited by space or tab.
 multiple space or tab are ignored.
+the third and following line will be ignored.
+you can input some comment about the dices here.
+the last line must contain `#sort` to indicate
+that this is a sort command message.
 
 ```
 2D6+3 2D6+1 2D6-3 1D6+2
 alice bob   chard denis
-staff before last line will be ignored
-...
+battle agile order
+first round in basement
 #sort
 ```
 
@@ -273,8 +285,8 @@ the sent command is like:
 (2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)
 2D6+3 2D6+1 2D6-3 1D6+2
 alice bob   chard denis
-staff before last line will be ignored
-...
+battle agile order
+first round in basement
 #sort
  ((2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)) ＞ (8[4,4]+3)+(5[2,3]+1)+(6[2,4]-3)+(1[1]+2) ＞ 23
 ```
@@ -282,13 +294,72 @@ staff before last line will be ignored
 the last line is the result of the dices,
 which will only show up after sent.
 
+if the last line is `#sort #hide`,
+the message will not show up to the other players.
+this help hiding enemy's abilities detail.
+
 after the dice result show up, MSRT will parse the result and
-send the order in second message.
+fill the order in input box.
+the comment will also append to the order.
 
 ```
 alice(11) > bob(6) > chard(3) > denis(3)
+battle agile order
+first round in basement
 ```
 
+### 中文說明
+這是用在 [網頁 TRPG 平台 ccfolia][ccf] 的擲骰小工具，
+目前可以讓使用者一次丟多個丟多個骰子並排序。
+在 ccf 房間中點擊此小書籤後，
+會在對話框的發送按鈕旁出現一個 `MSRT` 按鈕。
+
+要進行排序的話，
+在對話框中第一行輸入以空白分隔的數值的組合，
+第二行則輸入各組合的名稱，
+多個空白會被壓縮為一個。
+第三行開始可以輸入任意行的任意文字作為說明，
+最行一行則只能有 `#sort` 關鍵字。
+範例：
+
+```
+2D6+3 2D6+1 2D6-3 1D6+2
+哈利  榮恩  妙麗  露娜
+霍格華茲五年級生決鬥實力
+一對一決鬥條件下
+#sort
+```
+
+接著按下 `MSRT` 按鈕，
+此工具即會把文字調整為如下格式並發送：
+
+```
+(2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)
+2D6+3 2D6+1 2D6-3 1D6+2
+哈利  榮恩  妙麗  露娜
+霍格華茲五年級生決鬥實力
+一對一決鬥條件下
+#sort
+ ((2D6+3)+(2D6+1)+(2D6-3)+(1D6+2)) ＞ (8[4,4]+3)+(5[2,3]+1)+(6[2,4]-3)+(1[1]+2) ＞ 23
+```
+
+其中最一行是擲骰結果，是發送後 ccf 系統自動產生的。
+
+若希望隱藏擲骰結果，在最後一行則要改為輸入 `#sort #hide` ，
+這樣就會變成丟只有自己看的到的祕密骰。
+ccf 的祕密骰是整則訊息都會隱藏，不只有擲骰結果。
+
+在送出訊息並系統顯示出擲骰結果後，本工具就會依顯示的結果，
+在文字輸入框中填入排列好的結果，
+使用者可以調整訊息內容或直接送出。
+同時作為說明的文字內容也會自動帶入。
+範例：
+
+```
+哈利(11) > 榮恩(6) > 妙麗(3) > 靈娜(3)
+霍格華茲五年級生決鬥實力
+一對一決鬥條件下
+```
 
 ## [google search unredirect]
 this user script will remove redirect link in google search result page,
@@ -375,7 +446,7 @@ document.querySelectorAll('a').forEach(a => {
 [github fork compare]: javascript:void%20function%20()%20%7B(async()%3D%3E%7Bconst%20aTags%3D%5B...document.querySelectorAll(%22div.repo%20a%3Alast-of-type%22)%5D.slice(1)%3Bfor(const%20aTag%20of%20aTags)await%20fetch(aTag.href).then(x%3D%3Ex.text()).then(html%3D%3EaTag.outerHTML%2B%3D%60%24%7Bhtml.match(%2FThis%20branch%20is.*%2F).pop().replace(%22This%20branch%20is%22%2C%22%22).replace(%2F(%5B0-9%5D%2B%20commits%3F%20ahead)%2F%2C'%3Cfont%20color%3D%22%230c0%22%3E%241%3C%2Ffont%3E').replace(%2F(%5B0-9%5D%2B%20commits%3F%20behind)%2F%2C'%3Cfont%20color%3D%22red%22%3E%241%3C%2Ffont%3E')%7D%60).catch(console.error)%7D)()%3B%7D()
 
 [paste-to-form-file.user.js]: paste-to-form-file.user.js
-[msrt ccf dice tool]: javascript:void%20function%20()%20%7Bconst%20dicer%3Dwindow%5B%22msrt-ccf-dicer%22%5D%3D%7Binit()%7Bthis.inputId%3D%22downshift-0-input%22%2Cthis.messageSelector%3D%22.MuiListItem-root.MuiListItem-gutters%20p%22%2Cthis.diceResultSelector%3D%22span.MuiTypography-colorTextSecondary%2C%20span%22%2Cthis.helpText%3D%22%5Cnexample%3A%5Cn2D6%2B3%202D6%2B1%202D6-3%201D6%2B2%5Cnalice%20bob%20%20%20chard%20denis%5Cnstaff%20before%20last%20line%20will%20be%20ignored%5Cn...%5Cn%23sort%5Cn%5Cnand%20click%20%60msrt%60%20button%5Cn%22%2Cthis.addButton()%7D%2CgetText()%7Breturn%20document.getElementById(this.inputId).value%7D%2CcheckFormat%3As%3D%3Es.split(%2F%5Cn%2F).some(l%3D%3E%2F%5E%23sort%2F.test(l))%2Cdispatch(node%2Cname)%7Bconst%20event%3Dnew%20Event(name%2C%7Bbubbles%3A!0%7D)%3Bevent.isTrust%3D!0%2Cnode.dispatchEvent(event)%7D%2CsetNativeValue(element%2Cvalue)%7Bconst%20valueSetter%3DObject.getOwnPropertyDescriptor(element%2C%22value%22).set%2Cprototype%3DObject.getPrototypeOf(element)%2CprototypeValueSetter%3DObject.getOwnPropertyDescriptor(prototype%2C%22value%22).set%3BvalueSetter%26%26valueSetter!%3D%3DprototypeValueSetter%3FprototypeValueSetter.call(element%2Cvalue)%3AvalueSetter.call(element%2Cvalue)%7D%2CputText(s)%7Bconst%20node%3Ddocument.getElementById(this.inputId)%3Bthis.setNativeValue(node%2Cs)%2Cthis.dispatch(node%2C%22change%22)%7D%2Csend()%7Bdocument.querySelector(%22button%5Btype%3Dsubmit%5D%22).click()%7D%2Csleep%3Asecond%3D%3Enew%20Promise(wake%3D%3EsetTimeout(wake%2C1e3*second))%2CgetLastMessage()%7Bconst%20list%3Ddocument.querySelectorAll(this.messageSelector)%3Breturn%20list%5Blist.length-1%5D%7D%2Casync%20waitRoll()%7Bconst%20lastOrigin%3Dthis.getLastMessage()%3Bfor(%3B%3B)%7Bawait%20this.sleep(1)%3Bconst%20last%3Dthis.getLastMessage()%3Bif(last!%3DlastOrigin%26%26this.checkFormat(last.textContent))return%20last%7D%7D%2CparseDiceBracket(node)%7Bconst%20text%3Dnode.querySelector(this.diceResultSelector).textContent%2Cscan%3Dtext.match(%2F%5C(%5B%5Cd%2C%2B%5C%5B%5C%5D%5C-%5D%2B%5C)%2Fg)%3Breturn%20scan%3Fscan.map(s%3D%3Es.replace(%2F%5C%5B.*%5C%5D%2F%2C%22%22)).map(s%3D%3Eeval(s))%3Anull%7D%2CnormalizeLine(text)%7Bconst%20line%3Dtext.split(%22%5Cn%22).map(s%3D%3Es.trim())%3Bif(line%5B0%5D.match(%22%20%22))%7Bconst%20diceCode%3Dline%5B0%5D.split(%2F%5Cs%2B%2F).map(d%3D%3E%60(%24%7Bd%7D)%60).join(%22%2B%22)%3Bline.unshift(diceCode)%7Dreturn%2F%23sort%2F.test(text)%7C%7Cline.push(%22%23sort%22)%2Cline%7D%2ChandleError()%7Balert(%22format%20wrong%5Cn%22%2Bthis.helpText)%7D%2Casync%20run()%7Bconst%20text%3Dthis.getText().trim()%3Bif(!text)throw%20new%20Error(%22empty%20input%22)%3Bconst%20line%3Dthis.normalizeLine(text)%2CunitList%3Dline%5B2%5D.split(%2F%5Cs%2B%2F).map(u%3D%3E%5Bu%5D)%3Bthis.putText(line.join(%22%5Cn%22)%2B%22%5Cn%22)%2Cthis.send()%3Bconst%20roll%3Dawait%20this.waitRoll()%2CdiceResult%3Dthis.parseDiceBracket(roll)%3BunitList.forEach((a%2Ci)%3D%3Ea.push(diceResult%5Bi%5D))%2CunitList.sort((x%2Cy)%3D%3Ey%5B1%5D-x%5B1%5D)%2Cthis.putText(unitList.map(a%3D%3E%60%24%7Ba%5B0%5D%7D(%24%7Ba%5B1%5D%7D)%60).join(%22%20%3E%20%22))%2Cthis.send()%7D%2CaddButton()%7Bconst%20b%3Ddocument.createElement(%22button%22)%3Bb.type%3D%22button%22%2Cb.textContent%3D%22msrt%22%2Cb.className%3D%22MuiButtonBase-root%20MuiButton-root%20MuiButton-text%20MuiButton-textSizeSmall%20MuiButton-sizeSmall%22%2Cb.onclick%3D(()%3D%3Ethis.run().catch(error%3D%3E%7Balert(String(error))%2Cthis.handleError()%7D))%2Cdocument.querySelector(%22button%5Btype%3Dsubmit%5D%22).parentNode.appendChild(b)%7D%7D%3Bdicer.init()%3B%7D()
+[msrt ccf dice tool]: javascript:void%20function%20()%20%7Bconst%20dicer%3Dwindow%5B%22msrt-ccf-dicer%22%5D%3D%7Binit()%7Bthis.inputId%3D%22downshift-0-input%22%2Cthis.messageSelector%3D%22.MuiListItem-root.MuiListItem-gutters%20p%22%2Cthis.diceResultSelector%3D%22span.MuiTypography-colorTextSecondary%2C%20span%22%2Cthis.helpText%3D%22%5Cnexample%3A%5Cn2D6%2B3%202D6%2B1%202D6-3%201D6%2B2%5Cnalice%20bob%20%20%20chard%20denis%5Cnstaff%20before%20last%20line%20will%20be%20ignored%5Cn...%5Cn%23sort%5Cn%5Cnand%20click%20%60msrt%60%20button%5Cn%22%2Cthis.addButton()%7D%2CgetText()%7Breturn%20document.getElementById(this.inputId).value%7D%2CcheckFormat(s)%7Bconst%20line%3Ds.split(%2F%5Cn%2F)%3Breturn%20line.length%3E%3D3%26%26line.some(l%3D%3E%2F%5E%23sort%2F.test(l))%7D%2Cdispatch(node%2Cname)%7Bconst%20event%3Dnew%20Event(name%2C%7Bbubbles%3A!0%7D)%3Bevent.isTrust%3D!0%2Cnode.dispatchEvent(event)%7D%2CsetNativeValue(element%2Cvalue)%7Bconst%20valueSetter%3DObject.getOwnPropertyDescriptor(element%2C%22value%22).set%2Cprototype%3DObject.getPrototypeOf(element)%2CprototypeValueSetter%3DObject.getOwnPropertyDescriptor(prototype%2C%22value%22).set%3BvalueSetter%26%26valueSetter!%3D%3DprototypeValueSetter%3FprototypeValueSetter.call(element%2Cvalue)%3AvalueSetter.call(element%2Cvalue)%7D%2CputText(s)%7Bconst%20node%3Ddocument.getElementById(this.inputId)%3Bthis.setNativeValue(node%2Cs)%2Cthis.dispatch(node%2C%22change%22)%7D%2Csend()%7Bdocument.querySelector(%22button%5Btype%3Dsubmit%5D%22).click()%7D%2Csleep%3Asecond%3D%3Enew%20Promise(wake%3D%3EsetTimeout(wake%2C1e3*second))%2CgetLastMessage()%7Bconst%20list%3Ddocument.querySelectorAll(this.messageSelector)%3Breturn%20list%5Blist.length-1%5D%7D%2Casync%20waitRoll()%7Bconst%20lastOrigin%3Dthis.getLastMessage()%3Bfor(%3B%3B)%7Bawait%20this.sleep(1)%3Bconst%20last%3Dthis.getLastMessage()%3Bif(last!%3DlastOrigin%26%26this.checkFormat(last.textContent))return%20last%7D%7D%2CparseDiceBracket(node)%7Bconst%20text%3Dnode.querySelector(this.diceResultSelector).textContent%2Cscan%3Dtext.match(%2F%5C(%5B%5Cd%2C%2B%5C%5B%5C%5D%5C-%5D%2B%5C)%2Fg)%3Breturn%20scan%3Fscan.map(s%3D%3Es.replace(%2F%5C%5B.*%5C%5D%2F%2C%22%22)).map(s%3D%3Eeval(s))%3Anull%7D%2CnormalizeLine(text)%7Bconst%20line%3Dtext.split(%22%5Cn%22).map(s%3D%3Es.trim())%3Blet%20hide%3D%22%22%3Bif(line%5Bline.length-1%5D.match(%22%23hide%22)%26%26(hide%3D%22S%22)%2Cline%5B0%5D.match(%22%20%22))%7Bconst%20diceCode%3Dline%5B0%5D.split(%2F%5Cs%2B%2F).map(d%3D%3E%60(%24%7Bd%7D)%60).join(%22%2B%22)%3Bline.unshift(hide%2BdiceCode)%7Dreturn%20line%7D%2ChandleError()%7Balert(%22format%20wrong%5Cn%22%2Bthis.helpText)%7D%2Casync%20run()%7Bconst%20text%3Dthis.getText().trim()%3Bif(!text)throw%20new%20Error(%22empty%20input%22)%3Bif(!this.checkFormat(text))throw%20new%20Error(%22format%20wrong%22)%3Bconst%20line%3Dthis.normalizeLine(text)%2CunitList%3Dline%5B2%5D.split(%2F%5Cs%2B%2F).map(u%3D%3E%5Bu%5D)%3Bthis.putText(line.join(%22%5Cn%22)%2B%22%5Cn%22)%2Cthis.send()%3Bconst%20roll%3Dawait%20this.waitRoll()%2CdiceResult%3Dthis.parseDiceBracket(roll)%3BunitList.forEach((a%2Ci)%3D%3Ea.push(diceResult%5Bi%5D))%2CunitList.sort((x%2Cy)%3D%3Ey%5B1%5D-x%5B1%5D)%2Cthis.putText(unitList.map((%5Bn%2Cv%5D)%3D%3E%60%24%7Bn%7D(%24%7Bn.match(%22%23S%22)%3F%22%23%22%3Av%7D)%60).join(%22%20%3E%20%22)%2B%22%5Cn%22%2Bline.slice(3%2C-1).join(%22%5Cn%22))%7D%2CaddButton()%7Bconst%20b%3Ddocument.createElement(%22button%22)%3Bb.type%3D%22button%22%2Cb.textContent%3D%22msrt%22%2Cb.className%3D%22MuiButtonBase-root%20MuiButton-root%20MuiButton-text%20MuiButton-textSizeSmall%20MuiButton-sizeSmall%22%2Cb.onclick%3D(()%3D%3Ethis.run().catch(error%3D%3E%7Balert(String(error))%2Cthis.handleError()%7D))%2Cdocument.querySelector(%22button%5Btype%3Dsubmit%5D%22).parentNode.appendChild(b)%7D%7D%3Bdicer.init()%3B%7D()
 
 [google search unredirect]: google-search-unredirect.user.js
 [facebook notify]: facebook-notify.user.js
