@@ -44,19 +44,19 @@ async function promptUi(title, text = '') {
     })
     create('style', dialog).textContent = `
 .gholk-prompt-dialog {
-        position: fixed;
-        top: 30%;
-        left: 30%;
-        width: 40%;
-        height: auto;
-        background: white;
-        padding: 1em;
-        z-index: 9999;
+    position: fixed;
+    top: 30%;
+    left: 30%;
+    width: 40%;
+    height: auto;
+    background: white;
+    padding: 1em;
+    z-index: 9999;
 }
 .gholk-prompt-dialog textarea {
-        display: block;
-        width: 100%;
-        height: 5em;
+    display: block;
+    width: 100%;
+    height: 5em;
 }
 `
     b.appendChild(dialog)
@@ -136,7 +136,35 @@ function downloadHtml() {
         const copy = root.cloneNode(deep)
         copy.querySelectorAll('iframe[src ^= moz-extension')
             .forEach(e => e.remove())
+        fixRelativeUrl(copy)
         return copy
+    }
+    function fixRelativeUrl(root) {
+        let base = root.querySelector('base')
+        if (base) {
+            const relative = base.getAttribute('href')
+            base.dataset.gholkOriginalHref = relative
+            base.setAttribute('href', base.href)
+        }
+        else {
+            base = document.createElement('base')
+            base.href = root.baseURI
+            base.dataset.gholkOriginalHref = ''
+            let head = root.querySelector('head')
+            if (head) head.prepend(base)
+            else root.prepend(base)
+        }
+        /*
+          copy.querySelectorAll('[href], [src]').forEach(e => {
+          const abs = /^\w+:\/\//
+          if ('href' in e && !abs.test(e.getAttribute('href'))) {
+          e.setAttribute('href', e.href)
+          }
+          else if ('src' in e && !abs.test(e.getAttribute('src'))) {
+          e.setAttribute('src', e.src)
+          }
+          })
+        */
     }
     const html = doctypeToString() + cleanCopy(document.documentElement).outerHTML
     const blob = new Blob([html])
