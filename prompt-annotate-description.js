@@ -19,6 +19,9 @@ async function promptUi(title, text = '') {
     create('h2', dialog).textContent = title
     const textarea = create('textarea', dialog)
     textarea.value = text
+    const docTitle = create('input', dialog)
+    docTitle.type = 'text'
+    docTitle.value = document.title
     const ok = create('button', dialog)
     ok.textContent = 'ok'
     let confirm
@@ -70,7 +73,7 @@ async function promptUi(title, text = '') {
     finally {
         dialog.remove()
     }
-    return textarea.value
+    return {annotate: textarea.value, title: docTitle.value}
 }
 function appendAfter(newNode, refNode) {
     const parent = refNode.parentNode
@@ -101,8 +104,9 @@ async function editDescription() {
             annotate = document.createElement('meta')
             annotate.setAttribute('property', 'gholk:annotate')
         }
-        annotate.content = result
+        annotate.content = result.annotate
         // or just head.appendChild() ?
+        document.title = result.title
         const first = $('meta[charset]') ||
               $('meta[http-equiv = content-type]') ||
               $('meta[http-equiv = Content-Type]') ||
@@ -113,11 +117,17 @@ async function editDescription() {
     }
 }
 function createUrlTag(url = window.location.href) {
-    if ($('meta[property="gholk:canonical"]')) return null
-    const tag = document.createElement('meta')
-    tag.setAttribute('property', 'gholk:canonical')
-    tag.setAttribute('content', url)
-    return tag
+    let tag = $('meta[property="gholk:canonical"]')
+    if (tag) {
+        tag.content = url
+        return null
+    }
+    else {
+        tag = document.createElement('meta')
+        tag.setAttribute('property', 'gholk:canonical')
+        tag.setAttribute('content', url)
+        return tag
+    }
 }
 
 // :r download-html.js
