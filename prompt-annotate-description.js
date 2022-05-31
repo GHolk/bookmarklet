@@ -137,7 +137,39 @@ function downloadHtml() {
         copy.querySelectorAll('iframe[src ^= moz-extension')
             .forEach(e => e.remove())
         fixRelativeUrl(copy)
+        fixEncode(copy)
         return copy
+    }
+    function fixEncode(root) {
+        if (document.characterSet == 'UTF-8') return
+        const list = root.querySelectorAll(
+            'meta[http-equiv=content-type],' +
+            'meta[http-equiv=Content-Type],' +
+            'meta[charset]'
+        )
+        if (list.length == 0) {
+            if (!confirm('not UTF-8 and no charset tag found, add one?')) return
+            const encodeNode = document.createElement('meta')
+            encodeNode.setAttribute('charset', 'utf-8')
+            encodeNode.dataset.gholkOriginalCharset = ''
+            const head = root.querySelector('head')
+            if (head) head.prepend(encodeNode)
+            else root.prepend(encodeNode)
+        }
+        else {
+            list.forEach(encodeNode => {
+                if (encodeNode.hasAttribute('charset')) {
+                    const original = encodeNode.getAttribute('charset')
+                    encodeNode.dataset.gholkOriginalCharset = original
+                    encodeNode.setAttribute('charset', 'utf-8')
+                }
+                else if (encodeNode.hasAttribute('http-equiv')) {
+                    encodeNode.dataset.gholkOriginalContentType = encodeNode.content
+                    encodeNode.content = 'text/html; charset=UTF-8'
+                }
+                else alert(`unknown error while fix encode node: ${encodeNode.outerHTML}`)
+            })
+        }
     }
     function fixRelativeUrl(root) {
         let base = root.querySelector('base')
@@ -167,7 +199,7 @@ function downloadHtml() {
         */
     }
     const html = doctypeToString() + cleanCopy(document.documentElement).outerHTML
-    const blob = new Blob([html])
+    const blob = new Blob([html], {type: 'text/html'})
     const download = document.createElement('a')
     download.download = document.title + '.html'
     download.href = URL.createObjectURL(blob)
