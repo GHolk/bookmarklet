@@ -38,7 +38,7 @@ async function promptUi(title, text = '') {
     }
     download.textContent = 'download'
     // confirm when ctrl-enter
-    textarea.addEventListener('keydown', e => {
+    dialog.addEventListener('keydown', e => {
         if (e.key == 'Enter' && e.ctrlKey) confirm()
         else if (e.key == 's' && e.ctrlKey) {
             e.preventDefault()
