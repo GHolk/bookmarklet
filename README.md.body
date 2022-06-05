@@ -89,6 +89,11 @@ and open in the new tab.
 ### [強制啟用貼上功能小書籤版][force-enable-paste.bookmarklet.js]
 同上，不想裝油猴的可以用小書籤版。
 
+## [facebook image downloader]
+download images on facebook when viewing them.
+when url change, this script will find the
+image and download it with timestamp filename.
+
 ## [press b to google]
 靈感來自 [gslin 的 press g to google][pg2g] 。
 把搜尋引擎換成 duckduckgo 後，搜尋結果沒有 google 那麼好，
