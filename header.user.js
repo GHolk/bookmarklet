@@ -88,7 +88,7 @@ class GholkLib {
         })
         this.defm(Object, 'toArray', function toArray() {
             return Array.from(this)
-        }
+        })
     }
     depatch() {
         for (const name of 'bind pipe toArray'.split(' ')) {
