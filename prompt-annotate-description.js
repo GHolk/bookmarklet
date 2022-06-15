@@ -64,6 +64,8 @@ async function promptUi(title, text = '') {
 `
     b.appendChild(dialog)
     textarea.focus()
+    const editable = document.body.contentEditable
+    document.body.contentEditable = true
     try {
         await promise
     }
@@ -73,6 +75,7 @@ async function promptUi(title, text = '') {
     finally {
         dialog.remove()
     }
+    document.body.contentEditable = editable
     return {annotate: textarea.value, title: docTitle.value}
 }
 function appendAfter(newNode, refNode) {
