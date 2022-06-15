@@ -109,7 +109,7 @@ gslin 就寫了一個在 duckduckgo 結果頁面上，
 ## [hackmd scroll flip]
 make mouse scroll flip page in hackmd slide mode.
 title is bookmarklet, below is grease monkey user.js:
-[hackmd scroll flip user.js] .
+[hackmd-scroll-flip.user.js](hackmd-scroll-flip.user.js) .
 
 ## [moodle backup]
 在 [成功大學的 moodle][moodle.ncku] 首頁登入後，
