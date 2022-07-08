@@ -16,7 +16,8 @@ function create(tag, parent) {
 async function promptUi(title, text = '') {
     const dialog = document.createElement('div') // use <dialog> ?
     dialog.className = 'gholk-prompt-dialog'
-    create('h2', dialog).textContent = title
+    const titleNode = create('h2', dialog)
+    titleNode.textContent = title
     const textarea = create('textarea', dialog)
     textarea.value = text
     const docTitle = create('input', dialog)
@@ -55,14 +56,32 @@ async function promptUi(title, text = '') {
     background: white;
     padding: 1em;
     z-index: 9999;
+    border: solid 1px;
+    opacity: 0.7;
+}
+.gholk-prompt-dialog h2 {
+    cursor: grab;
 }
 .gholk-prompt-dialog textarea {
     display: block;
     width: 100%;
     height: 5em;
 }
+.gholk-prompt-dialog.drag-preview {
+    border-width: 0.3em;
+    opacity: 1;
+}
+.gholk-prompt-dialog.drag-source {
+    opacity: 0.7;
+}
 `
     b.appendChild(dialog)
+
+    enableDragMove(dialog, titleNode)
+    dialog.contentEditable = false
+    // make dragging editable content to textarea no removing it from page
+    dialog.ondrop = e => e.dataTransfer.dropEffect = 'copy'
+
     textarea.focus()
     const editable = document.body.contentEditable
     document.body.contentEditable = true
@@ -74,8 +93,8 @@ async function promptUi(title, text = '') {
     }
     finally {
         dialog.remove()
+        document.body.contentEditable = editable
     }
-    document.body.contentEditable = editable
     return {annotate: textarea.value, title: docTitle.value}
 }
 function appendAfter(newNode, refNode) {
@@ -130,6 +149,46 @@ function createUrlTag(url = window.location.href) {
         tag.setAttribute('property', 'gholk:canonical')
         tag.setAttribute('content', url)
         return tag
+    }
+}
+
+function enableDragMove(container, handle) {
+    handle.draggable = true
+    const allowGlobalDrop = drag => {
+        drag.preventDefault()
+        drag.dataTransfer.dropEffect = 'move'
+    }
+    handle.ondragstart = start => {
+        const node = container
+        const box = node.getBoundingClientRect()
+        start.dataTransfer.setDragImage(
+            node,
+            start.clientX - box.x,
+            start.clientY - box.y
+        )
+        start.dataTransfer.effectAllowed = 'move'
+        window.addEventListener('dragover', allowGlobalDrop)
+        window.addEventListener('drop', dropOnWindow)
+        node.classList.add('drag-preview')
+        node.dataset.dragStartClientXY = `${start.clientX} ${start.clientY}`
+        setTimeout(() => {
+            node.classList.add('drag-source')
+        }, 100)
+    }
+    function dropOnWindow(drop) {
+        const node = container
+        const box = node.getBoundingClientRect()
+        const dragStartClientXY =
+            node.dataset.dragStartClientXY.split(' ').map(x => Number(x))
+        delete node.dataset.dragStartClientXY
+        node.style.top = (drop.clientY - dragStartClientXY[1] + box.y) + 'px'
+        node.style.left = (drop.clientX - dragStartClientXY[0] + box.x) + 'px'
+        node.classList.remove('drag-preview')
+        node.classList.remove('drag-source')
+    }
+    handle.ondragend = () => {
+        window.removeEventListener('drop', dropOnWindow)
+        window.removeEventListener('dragover', allowGlobalDrop)
     }
 }
 
