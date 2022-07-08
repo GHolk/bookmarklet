@@ -164,8 +164,11 @@ class FacebookImageDownloader extends GholkLib {
             if (url != this.url) {
                 this.url = url
                 const image = this.$$('[role = main] img')
-                if (image.length != 1) alert('find more than 1 image')
-                else this.download(image[0].src)
+                if (image.length == 0) alert('no image found')
+                else if (image.length == 1) this.download(image[0].src)
+                else if (confirm('more than 1 image found, download all?')) {
+                    image.forEach(image => this.download(image.src))
+                }
             }
         }, 0.2)
     }
