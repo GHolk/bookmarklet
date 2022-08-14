@@ -12,19 +12,9 @@ class PttManUrl {
         return this.domParser.parseFromString(html, 'text/html')
     }
     parseManPath(path) {
-        let scan
-        // z-10-4-4
-        if (scan = path.match(/^z-?(\d+(-\d+)+)/)) {
-            this.assert(path.slice(0, 2) == 'z-')
-            const list = scan[0].split('-').slice(1).map(x => Number(x))
-            this.assert(!list.some(x => Number.isNaN(x)))
-            return list
-        }
-        // 5. 20.  8.
-        else if (scan = path.match(/^(\s*\d+\s*\.?)+/)) {
-            return scan[0].match(/\d+/g).map(x => Number(x))
-        }
-        else throw new Error('unknown man path')
+        const list = path.match(/\d+/g).map(x => Number(x))
+        this.assert(list.length > 0 && !list.some(x => Number.isNaN(x)))
+        return list
     }
     // use fetch api
     async fetchDoc(url) {
@@ -53,15 +43,16 @@ class PttManUrl {
         }
         return url
     }
-    parseFullPath(string) {
+    parseBoardManPath(string) {
         /* 8. 8. 2 (PttNewhand)
-           z-8-8-2 (PttNewhand) */
-        const regexpTail = /\s*\(([\w-]+)\)\s*$/
+           z-8-8-2 (PttNewhand)
+           z-8-8-2 PttNewhand */
+        const regexpTail = /\s*\(?([\w-]+)\)?\s*$/
         const scanTail = string.match(regexpTail)
         if (scanTail) {
             const board = scanTail[1]
             const path = string.replace(regexpTail, '')
-            return [board, path]
+            if (!board.slice(1).match(/^[\d-]*$/)) return [board, path]
         }
 
         /* PttNewhand. 8. 8. 2
@@ -71,27 +62,33 @@ class PttManUrl {
         const scanLead = string.match(regexpLead)
         if (scanLead && scanLead[1] != 'z' && !/^\d+$/.test(scanLead)) {
             const board = scanLead[1]
-            let path = string.replace(regexpLead, '')
-            if (scanLead[2] == '-z-') path = 'z-' + path
-            return [board, path]
+            const path = string.replace(regexpLead, '')
+            if (!board.match(/^\d+$/)) return [board, path]
         }
         throw new Error('unknown board format')
     }
     static async browserUi() {
         const o = new this()
+
+        if (!o.checkCors()) {
+            alert(`you need to run this bookmarklet under
+https://www.ptt.cc/`)
+            return
+        }
+
         const input = prompt('please input board name and path')
         let board
         let path
 
         try {
-            [board, path] = o.parseFullPath(input)
+            [board, path] = o.parseBoardManPath(input)
         }
         catch (formatError) {
             board = null
         }
 
         if (!board) {
-            const urlRegexp = /https:..www.ptt.cc.(?:man|bbs).([\w-]+)/
+            const urlRegexp = /^https:..www.ptt.cc.(?:man|bbs).([\w-]+)/
             let scan
             if (scan = window.location.href.match(urlRegexp)) {
                 board = scan[1]
@@ -101,19 +98,48 @@ class PttManUrl {
 
         if (!board) {
             alert(`format error, the path should be one of following:
-PttNewhand z-8-8-2
-PttNewhand-z-8-8-2
-PttNewhand 8. 8. 2
-PttNewhand. 8. 8. 2
 8. 8. 2 (PttNewhand)
 z-8-8-2 (PttNewhand)
+z-8-8-2 PttNewhand
+PttNewhand. 8. 8. 2
+PttNewhand 8. 8. 2
+PttNewhand z-8-8-2
+z-8-8-2
+8. 8. 2
 `)
             return
         }
 
-        const url = await o.lookup(board, path)
-        window.open(url)
+        return o.showLoadEffect(async () => {
+            let url
+            try {
+                url = await o.lookup(board, path)
+            }
+            catch (error) {
+                url = null
+                alert(error)
+            }
+            if (url) return window.open(url)
+        })
     }
+    checkCors() {
+        const ptt = /^https:..www.ptt.cc(\/|$)/
+        return ptt.test(window.location.href)
+    }
+    async showLoadEffect(todo) {
+        const body = document.body
+        const {cursor, filter} = body.style
+        Object.assign(body.style, {
+            cursor: 'progress',
+            filter: 'brightness(0.8)'
+        })
+        const result = await todo()
+        Object.assign(body.style, {cursor, filter})
+        return result
+    }
+}
+if (typeof window == 'object' && typeof GM == 'undefined') {
+    PttManUrl.browserUi()
 }
 
 /*
