@@ -2,6 +2,7 @@ class PttManUrl {
     constructor() {
         return this._constructor(...arguments)
     }
+    // use dom parser api
     _constructor() {
         this.domParser = new DOMParser()
     }
@@ -25,7 +26,8 @@ class PttManUrl {
     // use dom parser api
     async nthInUrl(n, url) {
         const doc = await this.fetchDoc(url)
-        return doc.querySelectorAll('.m-ent a')[n - 1].href
+        const anchor = doc.querySelectorAll('.m-ent a')[n - 1]
+        return anchor.getAttribute('href')
     }
     boardToUrl(board) {
         return `https://www.ptt.cc/man/${board}/index.html`
@@ -39,7 +41,9 @@ class PttManUrl {
         const base = this.boardToUrl(board)
         let url = base
         for (const n of path) {
-            url = await this.nthInUrl(n, url)
+            const relative = await this.nthInUrl(n, url)
+            const u = new URL(relative, url)
+            url = u.href
         }
         return url
     }
@@ -67,26 +71,21 @@ class PttManUrl {
         }
         throw new Error('unknown board format')
     }
-    static async browserUi() {
-        const o = new this()
-
-        if (!o.checkCors()) {
-            alert(`you need to run this bookmarklet under
+    async browserUi() {
+        if (!this.checkCors()) {
+            this.alert(`you need to run this bookmarklet under
 https://www.ptt.cc/`)
             return
         }
-
-        const input = prompt('please input board name and path')
+        const input = await this.prompt('please input board name and path')
         let board
         let path
-
         try {
-            [board, path] = o.parseBoardManPath(input)
+            [board, path] = this.parseBoardManPath(input)
         }
         catch (formatError) {
             board = null
         }
-
         if (!board) {
             const urlRegexp = /^https:..www.ptt.cc.(?:man|bbs).([\w-]+)/
             let scan
@@ -95,9 +94,8 @@ https://www.ptt.cc/`)
                 path = input
             }
         }
-
         if (!board) {
-            alert(`format error, the path should be one of following:
+            await this.alert(`format error, the path should be one of following:
 8. 8. 2 (PttNewhand)
 z-8-8-2 (PttNewhand)
 z-8-8-2 PttNewhand
@@ -109,22 +107,24 @@ z-8-8-2
 `)
             return
         }
-
-        return o.showLoadEffect(async () => {
+        return this.showLoadEffect(async () => {
             let url
             try {
-                url = await o.lookup(board, path)
+                url = await this.lookup(board, path)
             }
             catch (error) {
                 url = null
-                alert(error)
+                this.alert(error)
             }
-            if (url) return window.open(url)
+            if (url) return this.open(url)
         })
     }
     checkCors() {
         const ptt = /^https:..www.ptt.cc(\/|$)/
         return ptt.test(window.location.href)
+    }
+    open(url) {
+        return window.open(url)
     }
     async showLoadEffect(todo) {
         const body = document.body
@@ -137,29 +137,37 @@ z-8-8-2
         Object.assign(body.style, {cursor, filter})
         return result
     }
+    async prompt(question) {
+        return prompt(question)
+    }
+    async alert(message) {
+        alert(message)
+    }
+    static run(withThis) {
+        const o = new this()
+        return withThis(o)
+    }
 }
-if (typeof window == 'object' && typeof GM == 'undefined') {
-    PttManUrl.browserUi()
+
+if (typeof tri == 'object') {
+    tri.PttManUrl = class extends PttManUrl {
+        async triUi(input) {
+            this.inputFullPath = input
+            return await this.browserUi()
+        }
+        async prompt(question) {
+            return this.inputFullPath
+        }
+        async alert(message) {
+            await tri.controller.acceptExCmd('m ' + message)
+        }
+        open(url) {
+            return url
+        }
+        checkCors(url) {
+            return true
+        }
+    }
+} else if (typeof window == 'object' && typeof GM == 'undefined') {
+    PttManUrl.run(o => o.browserUi())
 }
-
-/*
-key-C-w
-【精華文章】     ◆  │ 　　　　│ 看板相關│ 　　　　│ 　　　　│                  
-我在哪？z-8-8-2
-PttNewhand
-  8. ◆  ║ │ 【常見問題】             問題/答案│ ║ 
-   8. ◆  │ 　　　　│ 看板相關│ 　　　　│ 　　　　│ 
-    2. ◇  『黑洞處理方式』
-
-index
-  8.  8.  2. ◇  『黑洞處理方式』
-
-article
-│  文章代碼(AID): #1YxpVlsV (PttNewhand) [ptt.cc] [問題] 美國申請帳號       │ 
-
-PttNewhand. 8. 8. 2
-PttNewhand 8. 8. 2
-PttNewhand-z-8-8-2
-8. 8. 2 (PttNewhand)
-z-8-8-2 (PttNewhand)
-*/
