@@ -107,8 +107,8 @@ z-8-8-2
 `)
             return
         }
-        return this.showLoadEffect(async () => {
-            let url
+        let url
+        for (const done of this.showLoadEffect()) {
             try {
                 url = await this.lookup(board, path)
             }
@@ -116,8 +116,8 @@ z-8-8-2
                 url = null
                 this.alert(error)
             }
-            if (url) return this.open(url)
-        })
+        }
+        if (url) return this.open(url)
     }
     checkCors() {
         const ptt = /^https:..www.ptt.cc(\/|$)/
@@ -126,16 +126,15 @@ z-8-8-2
     open(url) {
         return window.open(url)
     }
-    async showLoadEffect(todo) {
+    *showLoadEffect() {
         const body = document.body
         const {cursor, filter} = body.style
         Object.assign(body.style, {
             cursor: 'progress',
             filter: 'brightness(0.8)'
         })
-        const result = await todo()
+        yield
         Object.assign(body.style, {cursor, filter})
-        return result
     }
     async prompt(question) {
         return prompt(question)
