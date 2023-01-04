@@ -38,7 +38,7 @@ p }' "$@" | while read name
         then reference_encode "$name" "$name"
         else
             find=''
-            for suffix in bookmarklet.js user.js html
+            for suffix in bookmarklet.js user.js user.css html
             do
                 if [ -f $kebab.$suffix ]
                 then
@@ -59,6 +59,7 @@ reference_encode() {
     local name="$2"
     case "$file" in
         *.user.js) echo "[$name]: $file" ;;
+        *.user.css) echo "[$name]: $file" ;;
         *.bookmarklet.js)
             echo -n "[$name]: "
             cat "$file" | encode_js_url

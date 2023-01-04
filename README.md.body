@@ -445,6 +445,16 @@ if you want to execute this script in that website.
 [ptsplus.tv]: https://www.ptsplus.tv/
 [勇者動畫系列]: https://www.ptsplus.tv/season/4b572dd5-bdc7-45a6-ba35-accfe9cda3df
 
+## [mastodon narrow 2 columns basic]
+Make mastodon web UI in 2 columns, so it works better in narrow window.
+
+This style will split whole page into 2 columns.
+The right column is the main stream,
+and the left column is split into upper and lower part.
+The upper-left is the textarea and the lower-left is the notification area.
+
+You have to add you mastodon instance url to this user style manually.
+
 <script>
 document.querySelectorAll('a').forEach(a => {
     a.href = a.href.replace(/(%[a-fA-F0-9]{2})+/g, c => decodeURIComponent(c))
