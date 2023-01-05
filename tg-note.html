@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<head>
+<meta charset="UTF-8">
+<title>note template - gholk</title>
+</head>
+<body>
+<main contenteditable="true"
+><p>[p]</p>
+<pre>[pre]</pre>
+</main>
+<div id="control-pane">
+<label><input type="checkbox" checked
+onchange="contentEditableToggle.call(this)">
+toggle content editable</label>
+<label><input type="checkbox" onchange="htmlToggle.call(this)">
+show html</label>
+
+<label><input type="checkbox" checked
+onchange="smartPasteToggle.call(this)">
+smart paste</label>
+<p>(smart escape html special characters in html source code mode)</p>
+
+<button onclick="imageAdd()">add image</button>
+</div>
+
+<style contenteditable="true"
+>body > style {
+  display: block;
+  white-space: pre-wrap;
+  color: gray;
+  margin: 1ex;
+  padding: 1ex;
+  border: solid 1px;
+}
+pre.wrap {
+  white-space: pre-line;
+}
+img {
+  display: block;
+  max-width: 100%;
+}
+label {
+  display: block;
+}
+main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::before {
+  color: gray;
+  content: '<x>';
+}
+main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::after {
+  color: gray;
+  content: '</>';
+}
+#control-pane {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  background: white;
+  border: solid 1px;
+  padding: 1em;
+}
+body {
+  padding-bottom: 20em;
+}
+main {
+  border: solid 1px;
+  margin: 1ex;
+  padding: 1ex;
+}
+table, th, td {
+  border: solid 1px;
+}
+</style>
+<script>
+var d = document,
+    b = d.body;
+
+function $(selector, context) {
+    return (context || d).querySelector(selector)
+}
+function $$(selector, context) {
+    return (context || d).querySelectorAll(selector)
+}
+
+function create(tag, parent = null) {
+    const elm = d.createElement(tag)
+    if (parent !== null) (parent || b).appendChild(elm);
+    return elm;
+}
+function contentEditableToggle() {
+  $('main').setAttribute('contenteditable', this.checked)
+  if (this.checked) this.setAttribute('checked')
+  else this.removeAttribute('checked')
+}
+function htmlToggle() {
+  toggle = this.checked
+  const toHtml = toggle
+  const main = $('main')
+  if (toHtml) {
+    const html = main.innerHTML
+    main.textContent = ''
+    const pre = create('pre', main)
+    pre.className = 'wrap html-code'
+    pre.textContent = html
+  }
+  else {
+    const html = $('main>pre').textContent
+    main.innerHTML = html
+  }
+}
+function imageAdd() {
+  const sw = $('input[onchange^=htmlToggle]')
+  if (!sw.checked) {
+    sw.checked = true
+    sw.dispatchEvent(new Event('change'))
+  }
+  $('main>pre').textContent += '\n<img src="">\n'
+}
+function smartPasteToggle() {
+  const smart = this.checked
+  const main = $('main')
+  if (smart) main.addEventListener('paste', smartPasteHandler)
+  else main.removeEventListener('paste', smartPasteHandler)
+}
+smartPasteToggle.call({checked: true})
+function smartPasteHandler(e) {
+  if (!e.target.matches('main>pre.html-code:only-child')) return
+  const data = e.clipboardData
+  if (~data.types.indexOf('text/html')) {
+    e.preventDefault()
+    const html = data.getData('text/html')
+    insertOnCursor(new Text(html))
+  }
+  if (data.types.length != 1 || data.types[0] != 'text/plain') return
+
+  const text = data.getData('text')
+  if (/[<>]/.test(text) || !/[&"']/.test(text)) return
+
+  e.preventDefault()
+  const node = create('span')
+  node.textContent = text
+  const escape = node.innerHTML
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+  insertOnCursor(new Text(escape))
+}
+function insertOnCursor(node) {
+  const sel = document.getSelection()
+  const range = sel.getRangeAt(0)
+  range.deleteContents()
+  range.insertNode(node)
+  range.collapse()
+}
+$$('input[type=checkbox]').forEach(e => e.checked = e.defaultChecked)
+</script>
+</body>
+</html>

@@ -461,3 +461,6 @@ document.querySelectorAll('a').forEach(a => {
 })
 </script>
 
+## [tg note]
+A basic html editor to compose rich text.
+Designed to store article snippets with [annotate](#%5Bprompt-annotate-description%5D) .
