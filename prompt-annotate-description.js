@@ -23,6 +23,8 @@ async function promptUi(title, text = '') {
     const docTitle = create('input', dialog)
     docTitle.type = 'text'
     docTitle.value = document.title
+    const editable = createContentEditableCheckBox()
+    dialog.appendChild(editable)
     const ok = create('button', dialog)
     ok.textContent = 'ok'
     let confirm
@@ -62,6 +64,9 @@ async function promptUi(title, text = '') {
 .gholk-prompt-dialog h2 {
     cursor: grab;
 }
+.gholk-prompt-dialog label {
+    display: block;
+}
 .gholk-prompt-dialog textarea {
     display: block;
     width: 100%;
@@ -83,8 +88,6 @@ async function promptUi(title, text = '') {
     dialog.ondrop = e => e.dataTransfer.dropEffect = 'copy'
 
     textarea.focus()
-    const editable = document.body.contentEditable
-    document.body.contentEditable = true
     try {
         await promise
     }
@@ -93,9 +96,17 @@ async function promptUi(title, text = '') {
     }
     finally {
         dialog.remove()
-        document.body.contentEditable = editable
     }
     return {annotate: textarea.value, title: docTitle.value}
+    
+    function createContentEditableCheckBox() {
+        const field = d.createElement('label')
+        field.innerHTML = '<input type="checkbox" name="content-editable-toggle" /> content editable'
+        $('input', field).onchange = function () {
+            d.body.contentEditable = this.checked
+        }
+        return field
+    }
 }
 function appendAfter(newNode, refNode) {
     const parent = refNode.parentNode
