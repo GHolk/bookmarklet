@@ -72,6 +72,10 @@ async function promptUi(title, text = '') {
     width: 100%;
     height: 5em;
 }
+.gholk-prompt-dialog input:not([type]),
+.gholk-prompt-dialog input[type=text] {
+    width: 100%;
+}
 .gholk-prompt-dialog.drag-preview {
     border-width: 0.3em;
     opacity: 1;
@@ -150,6 +154,9 @@ async function editDescription() {
     }
 }
 function createUrlTag(url = window.location.href) {
+    if (url.slice(0, 5) == 'data:') {
+        url = url.replace(/^(data.*?,.{10}).*(.{40})$/, '$1...$2')
+    }
     let tag = $('meta[property="gholk:canonical"]')
     if (tag) {
         tag.content = url
