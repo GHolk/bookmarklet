@@ -2,6 +2,7 @@
 <head>
 <meta charset="UTF-8">
 <title>note template - gholk</title>
+<meta property="gholk:cite" content="https://gholk.github.io/bookmarklet/tg-note.html">
 </head>
 <body>
 <main contenteditable="true"
@@ -18,9 +19,15 @@ show html</label>
 <label><input type="checkbox" checked
 onchange="smartPasteToggle.call(this)">
 smart paste</label>
-<p>(smart escape html special characters in html source code mode)</p>
+(smart escape html special characters in html source code mode)
+
+<label>cite url:
+<input type="url" placeholder="cite url"
+oninput="citeUrlUpdate.call(this)">
+</label>
 
 <button onclick="imageAdd()">add image</button>
+<button onclick="digestCheckSumSet()">sha256</button>
 </div>
 
 <style contenteditable="true"
@@ -31,6 +38,7 @@ smart paste</label>
   margin: 1ex;
   padding: 1ex;
   border: solid 1px;
+  font-family: monospace;
 }
 pre.wrap {
   white-space: pre-line;
@@ -40,7 +48,7 @@ img {
   max-width: 100%;
 }
 label {
-  display: block;
+  display: flex;
 }
 main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::before {
   color: gray;
@@ -58,6 +66,12 @@ main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::after {
   border: solid 1px;
   padding: 1em;
 }
+#control-pane > label > input[type=text],
+#control-pane > label > input[type=url] {
+  display: flex;
+  flex: 1;
+  margin-left: 1ex;
+}
 body {
   padding-bottom: 20em;
 }
@@ -71,24 +85,24 @@ table, th, td {
 }
 </style>
 <script>
-var d = document,
-    b = d.body;
+var d = document, $d = document,
+    b = d.body, $b = $d.body;
 
 function $(selector, context) {
-    return (context || d).querySelector(selector)
+    return (context || $d).querySelector(selector)
 }
 function $$(selector, context) {
-    return (context || d).querySelectorAll(selector)
+    return Array.from((context || $d).querySelectorAll(selector))
 }
 
 function create(tag, parent = null) {
-    const elm = d.createElement(tag)
-    if (parent !== null) (parent || b).appendChild(elm);
+    const elm = $d.createElement(tag)
+    if (parent !== null) (parent || $b).appendChild(elm);
     return elm;
 }
 function contentEditableToggle() {
   $('main').setAttribute('contenteditable', this.checked)
-  if (this.checked) this.setAttribute('checked')
+  if (this.checked) this.setAttribute('checked', '')
   else this.removeAttribute('checked')
 }
 function htmlToggle() {
@@ -96,6 +110,7 @@ function htmlToggle() {
   const toHtml = toggle
   const main = $('main')
   if (toHtml) {
+    // TODO: indent html
     const html = main.innerHTML
     main.textContent = ''
     const pre = create('pre', main)
@@ -106,6 +121,23 @@ function htmlToggle() {
     const html = $('main>pre').textContent
     main.innerHTML = html
   }
+}
+document.addEventListener('selectionchange', event =>
+  preventSelectHtmlBox(event)
+)
+// prevent delete code block in html source mode
+function preventSelectHtmlBox(event) {
+  const sel = $d.getSelection()
+  if (sel.isCollapsed) return
+  if (sel.anchorNode != sel.focusNode) return
+  const node = sel.anchorNode
+  if (node.nodeType != Node.ELEMENT_NODE) return
+  const pre = node.children[0]
+  if (!pre || !pre.matches('main>pre.html-code:only-child')) return
+  if (sel.rangeCount != 1) return
+
+  const r = sel.getRangeAt(0)
+  r.selectNodeContents(pre)
 }
 function imageAdd() {
   const sw = $('input[onchange^=htmlToggle]')
@@ -150,7 +182,39 @@ function insertOnCursor(node) {
   range.insertNode(node)
   range.collapse()
 }
-$$('input[type=checkbox]').forEach(e => e.checked = e.defaultChecked)
+function citeUrlUpdate() {
+  const meta = $('meta[property="gholk:cite"]')
+  meta.content = this.value
+  this.setAttribute('value', this.value)
+}
+async function digestCheckSumSet() {
+  const html = $('html').outerHTML
+  const sum = await digestCheckSum(html)
+  const hex = bufferToHex(sum)
+  $('input[oninput^="citeUrlUpdate"]').value += `?sha256=${hex}`
+}
+function digestCheckSum(text) {
+  const enc = new TextEncoder()
+  const data = enc.encode(text)
+  return crypto.subtle.digest('SHA-256', data)
+}
+function bufferToHex(buffer) {
+  const u8 = new Uint8Array(buffer)
+  return Array.from(u8)
+    .map(u => ('0' + u.toString(16)).slice(-2).toUpperCase())
+	.join('')
+}
+$$('input').forEach(e => {
+  switch (e.type) {
+    case 'checkbox':
+	e.checked = e.defaultChecked
+	break
+    
+	case 'url':
+	case 'text':
+	e.value = e.defaultValue
+  }
+})
 </script>
 </body>
 </html>
