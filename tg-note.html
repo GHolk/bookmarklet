@@ -15,6 +15,9 @@ onchange="contentEditableToggle.call(this)">
 toggle content editable</label>
 <label><input type="checkbox" onchange="htmlToggle.call(this)">
 show html</label>
+<label><input type="checkbox"
+onchange="keepLineBreakToggle.call(this)">
+keep line break</label>
 
 <label><input type="checkbox" checked
 onchange="smartPasteToggle.call(this)">
@@ -31,21 +34,37 @@ oninput="citeUrlUpdate.call(this)">
 </div>
 
 <style contenteditable="true"
->body > style {
+>:root {
+  /* linux, mac, *, linux, windows, windows, * */
+  --mono: "Liberation Mono", Monaco, "DejaVu Sans Mono", "Anonymous Pro", consolas, cascadia, monospace;
+}
+pre, code {
+  font-family: var(--mono);
+}
+body > style {
   display: block;
   white-space: pre-wrap;
   color: gray;
   margin: 1ex;
   padding: 1ex;
   border: solid 1px;
-  font-family: monospace;
+  font-family: var(--mono);
 }
 pre.wrap {
+  white-space: pre-line;
+}
+main.keep-line > p, main .keep-line {
   white-space: pre-line;
 }
 img {
   display: block;
   max-width: 100%;
+}
+blockquote {
+  border: solid #CCC 1px;
+  border-left: solid #CCC 1ex;
+  padding: 0 1em;
+  margin-left: 1ex;
 }
 label {
   display: flex;
@@ -53,29 +72,35 @@ label {
 main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::before {
   color: gray;
   content: '<x>';
+  font-family: var(--mono);
 }
 main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::after {
   color: gray;
   content: '</>';
+  font-family: var(--mono);
 }
-#control-pane {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  background: white;
-  border: solid 1px;
-  padding: 1em;
+@media (min-width: 50rem) {
+	#control-pane {
+	  position: fixed;
+	  bottom: 0;
+	  right: 0;
+	  background: white;
+	  border: solid 1px;
+	  padding: 1em;
+	}
 }
 #control-pane > label > input[type=text],
 #control-pane > label > input[type=url] {
   display: flex;
   flex: 1;
   margin-left: 1ex;
+  font-family: var(--mono);
+  font-variant-numeric: slashed-zero;
 }
 body {
   padding-bottom: 20em;
 }
-main {
+main, #control-pane {
   border: solid 1px;
   margin: 1ex;
   padding: 1ex;
@@ -105,6 +130,16 @@ function contentEditableToggle() {
   if (this.checked) this.setAttribute('checked', '')
   else this.removeAttribute('checked')
 }
+function keepLineBreakToggle() {
+  if (this.checked) {
+    $('main').classList.add('keep-line')
+    this.setAttribute('checked', '')
+  }
+  else {
+    $('main').classList.remove('keep-line')
+    this.removeAttribute('checked')
+  }
+}
 function htmlToggle() {
   toggle = this.checked
   const toHtml = toggle
@@ -118,6 +153,9 @@ function htmlToggle() {
     pre.textContent = html
   }
   else {
+    $$('main>pre>br').forEach(br =>
+	  br.replaceWith(document.createTextNode('\n'))
+	)
     const html = $('main>pre').textContent
     main.innerHTML = html
   }
@@ -160,7 +198,7 @@ function smartPasteHandler(e) {
   if (~data.types.indexOf('text/html')) {
     e.preventDefault()
     const html = data.getData('text/html')
-    insertOnCursor(new Text(html))
+    insertOnCursor(document.createTextNode(html))
   }
   if (data.types.length != 1 || data.types[0] != 'text/plain') return
 
@@ -173,7 +211,7 @@ function smartPasteHandler(e) {
   const escape = node.innerHTML
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;')
-  insertOnCursor(new Text(escape))
+  insertOnCursor(document.createTextNode(escape))
 }
 function insertOnCursor(node) {
   const sel = document.getSelection()
@@ -191,7 +229,9 @@ async function digestCheckSumSet() {
   const html = $('html').outerHTML
   const sum = await digestCheckSum(html)
   const hex = bufferToHex(sum)
-  $('input[oninput^="citeUrlUpdate"]').value += `?sha256=${hex}`
+  const field = $('input[oninput^="citeUrlUpdate"]')
+  field.value += `?sha256=${hex}`
+  citeUrlUpdate.call(field)
 }
 function digestCheckSum(text) {
   const enc = new TextEncoder()
