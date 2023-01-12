@@ -6,6 +6,7 @@
 </head>
 <body>
 <main contenteditable="true"
+onpaste="handlePaste(event)"
 ><p>[p]</p>
 <pre>[pre]</pre>
 </main>
@@ -20,9 +21,11 @@ onchange="keepLineBreakToggle.call(this)">
 keep line break</label>
 
 <label><input type="checkbox" checked
-onchange="smartPasteToggle.call(this)">
-smart paste</label>
-(smart escape html special characters in html source code mode)
+name="paste-smart">
+smart escape html special characters in html source code mode</label>
+
+<label><input type="checkbox" name="paste-html">
+paste html in html source code mode</label>
 
 <label>cite url:
 <input type="url" placeholder="cite url"
@@ -50,11 +53,20 @@ body > style {
   border: solid 1px;
   font-family: var(--mono);
 }
-pre.wrap {
-  white-space: pre-line;
+textarea.html-code {
+  font-family: var(--mono);
+  width: 100%;
+  height: 10em;
+  display: block;
+  overflow: auto;
+  outline: none;
+  border: none;
 }
 main.keep-line > p, main .keep-line {
-  white-space: pre-line;
+  white-space: pre-wrap;
+}
+.hide {
+  display: none;
 }
 img {
   display: block;
@@ -69,12 +81,12 @@ blockquote {
 label {
   display: flex;
 }
-main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::before {
+main[contenteditable=true] > *:not(hr,table,ul,ol,blockquote)::before {
   color: gray;
   content: '<x>';
   font-family: var(--mono);
 }
-main[contenteditable=true] > *:not(.html-code,hr,table,ul,ol)::after {
+main[contenteditable=true] > *:not(hr,table,ul,ol,blockquote)::after {
   color: gray;
   content: '</>';
   font-family: var(--mono);
@@ -148,34 +160,25 @@ function htmlToggle() {
     // TODO: indent html
     const html = main.innerHTML
     main.textContent = ''
-    const pre = create('pre', main)
-    pre.className = 'wrap html-code'
-    pre.textContent = html
+    const block = create('textarea', main)
+    block.textContent = html
+	block.className = 'html-code'
+	block.oninput = e => {
+	  const node = e.target
+	  if (node.scrollHeight > node.offsetHeight) {
+	    node.style.height = node.scrollHeight + 'px'
+	  }
+	}
+	block.oninput({target: block})
+	main.removeAttribute('contenteditable')
   }
   else {
-    $$('main>pre>br').forEach(br =>
-	  br.replaceWith(document.createTextNode('\n'))
-	)
-    const html = $('main>pre').textContent
+    const html = $('main>textarea').value
     main.innerHTML = html
+	contentEditableToggle.call(
+	  $('input[onchange^=contentEditableToggle]')
+	)
   }
-}
-document.addEventListener('selectionchange', event =>
-  preventSelectHtmlBox(event)
-)
-// prevent delete code block in html source mode
-function preventSelectHtmlBox(event) {
-  const sel = $d.getSelection()
-  if (sel.isCollapsed) return
-  if (sel.anchorNode != sel.focusNode) return
-  const node = sel.anchorNode
-  if (node.nodeType != Node.ELEMENT_NODE) return
-  const pre = node.children[0]
-  if (!pre || !pre.matches('main>pre.html-code:only-child')) return
-  if (sel.rangeCount != 1) return
-
-  const r = sel.getRangeAt(0)
-  r.selectNodeContents(pre)
 }
 function imageAdd() {
   const sw = $('input[onchange^=htmlToggle]')
@@ -183,25 +186,24 @@ function imageAdd() {
     sw.checked = true
     sw.dispatchEvent(new Event('change'))
   }
-  $('main>pre').textContent += '\n<img src="">\n'
+  const block = $('main>textarea')
+  block.value += '\n<img src="">\n'
+  block.dispatchEvent(new Event('input'))
+  block.focus()
+  block.selectionStart = block.selectionEnd = block.value.length - 3
 }
-function smartPasteToggle() {
-  const smart = this.checked
-  const main = $('main')
-  if (smart) main.addEventListener('paste', smartPasteHandler)
-  else main.removeEventListener('paste', smartPasteHandler)
-}
-smartPasteToggle.call({checked: true})
-function smartPasteHandler(e) {
-  if (!e.target.matches('main>pre.html-code:only-child')) return
+
+function handlePaste(e) {
+  if (!e.target.matches('main>textarea.html-code:only-child')) return
   const data = e.clipboardData
-  if (~data.types.indexOf('text/html')) {
+  const pasteHtml = $('input[name=paste-html]').checked
+  if (pasteHtml && ~data.types.indexOf('text/html')) {
     e.preventDefault()
     const html = data.getData('text/html')
-    insertOnCursor(document.createTextNode(html))
+    insertOnCursor(html)
   }
-  if (data.types.length != 1 || data.types[0] != 'text/plain') return
 
+  if (!$('input[name=paste-smart]').checked) return
   const text = data.getData('text')
   if (/[<>]/.test(text) || !/[&"']/.test(text)) return
 
@@ -211,14 +213,13 @@ function smartPasteHandler(e) {
   const escape = node.innerHTML
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;')
-  insertOnCursor(document.createTextNode(escape))
+  insertOnCursor(escape)
 }
-function insertOnCursor(node) {
-  const sel = document.getSelection()
-  const range = sel.getRangeAt(0)
-  range.deleteContents()
-  range.insertNode(node)
-  range.collapse()
+function insertOnCursor(text) {
+  const node = $d.activeElement
+  node.setRangeText(text, node.selectionStart, node.selectionEnd)
+  node.selectionStart = node.selectionEnd =
+    node.selectionStart + text.length
 }
 function citeUrlUpdate() {
   const meta = $('meta[property="gholk:cite"]')
