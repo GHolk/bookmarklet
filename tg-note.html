@@ -10,7 +10,8 @@ onpaste="handlePaste(event)"
 ><p>[p]</p>
 <pre>[pre]</pre>
 </main>
-<div id="control-pane">
+
+<aside id="control-pane">
 <label><input type="checkbox" checked
 onchange="contentEditableToggle.call(this)">
 toggle content editable</label>
@@ -34,7 +35,7 @@ oninput="citeUrlUpdate.call(this)">
 
 <button onclick="imageAdd()">add image</button>
 <button onclick="digestCheckSumSet()">sha256</button>
-</div>
+</aside>
 
 <style contenteditable="true"
 >:root {
@@ -44,7 +45,7 @@ oninput="citeUrlUpdate.call(this)">
 pre, code {
   font-family: var(--mono);
 }
-body > style {
+body > style, body > script {
   display: block;
   white-space: pre-wrap;
   color: gray;
@@ -92,14 +93,17 @@ main[contenteditable=true] > *:not(hr,table,ul,ol,blockquote)::after {
   font-family: var(--mono);
 }
 @media (min-width: 50rem) {
-	#control-pane {
-	  position: fixed;
-	  bottom: 0;
-	  right: 0;
-	  background: white;
-	  border: solid 1px;
-	  padding: 1em;
-	}
+  #control-pane {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    background: white;
+    border: solid 1px;
+    padding: 1em;
+  }
+  body {
+    padding-bottom: 20em;
+  }
 }
 #control-pane > label > input[type=text],
 #control-pane > label > input[type=url] {
@@ -108,9 +112,6 @@ main[contenteditable=true] > *:not(hr,table,ul,ol,blockquote)::after {
   margin-left: 1ex;
   font-family: var(--mono);
   font-variant-numeric: slashed-zero;
-}
-body {
-  padding-bottom: 20em;
 }
 main, #control-pane {
   border: solid 1px;
@@ -121,9 +122,8 @@ table, th, td {
   border: solid 1px;
 }
 </style>
-<script>
-var d = document, $d = document,
-    b = d.body, $b = $d.body;
+<script contenteditable="true"
+>var $d = document, $b = $d.body
 
 function $(selector, context) {
     return (context || $d).querySelector(selector)
@@ -132,10 +132,10 @@ function $$(selector, context) {
     return Array.from((context || $d).querySelectorAll(selector))
 }
 
-function create(tag, parent = null) {
+function $create(tag, parent) {
     const elm = $d.createElement(tag)
-    if (parent !== null) (parent || $b).appendChild(elm);
-    return elm;
+    if (parent) parent.appendChild(elm)
+    return elm
 }
 function contentEditableToggle() {
   $('main').setAttribute('contenteditable', this.checked)
@@ -160,24 +160,24 @@ function htmlToggle() {
     // TODO: indent html
     const html = main.innerHTML
     main.textContent = ''
-    const block = create('textarea', main)
+    const block = $create('textarea', main)
     block.textContent = html
-	block.className = 'html-code'
-	block.oninput = e => {
-	  const node = e.target
-	  if (node.scrollHeight > node.offsetHeight) {
-	    node.style.height = node.scrollHeight + 'px'
-	  }
-	}
-	block.oninput({target: block})
-	main.removeAttribute('contenteditable')
+    block.className = 'html-code'
+    block.oninput = e => {
+      const node = e.target
+      if (node.scrollHeight > node.offsetHeight) {
+        node.style.height = node.scrollHeight + 'px'
+      }
+    }
+    block.oninput({target: block})
+    main.removeAttribute('contenteditable')
   }
   else {
     const html = $('main>textarea').value
     main.innerHTML = html
-	contentEditableToggle.call(
-	  $('input[onchange^=contentEditableToggle]')
-	)
+    contentEditableToggle.call(
+      $('input[onchange^=contentEditableToggle]')
+    )
   }
 }
 function imageAdd() {
@@ -208,11 +208,11 @@ function handlePaste(e) {
   if (/[<>]/.test(text) || !/[&"']/.test(text)) return
 
   e.preventDefault()
-  const node = create('span')
+  const node = $create('span')
   node.textContent = text
   const escape = node.innerHTML
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
+    .replace(/"/g, '\x26quot;')
+    .replace(/'/g, '\x26apos;')
   insertOnCursor(escape)
 }
 function insertOnCursor(text) {
@@ -243,17 +243,17 @@ function bufferToHex(buffer) {
   const u8 = new Uint8Array(buffer)
   return Array.from(u8)
     .map(u => ('0' + u.toString(16)).slice(-2).toUpperCase())
-	.join('')
+    .join('')
 }
 $$('input').forEach(e => {
   switch (e.type) {
     case 'checkbox':
-	e.checked = e.defaultChecked
-	break
+    e.checked = e.defaultChecked
+    break
     
-	case 'url':
-	case 'text':
-	e.value = e.defaultValue
+    case 'url':
+    case 'text':
+    e.value = e.defaultValue
   }
 })
 </script>
