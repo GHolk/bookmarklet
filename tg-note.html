@@ -221,6 +221,22 @@ function insertOnCursor(text) {
   node.selectionStart = node.selectionEnd =
     node.selectionStart + text.length
 }
+
+function handleEnterNoBr(event) {
+  if (event.isComposing || event.key != 'Enter') return
+  event.preventDefault()
+  insertOnCursorContent($d.createTextNode('\n'))
+}
+$$('style,script').forEach(e => e.addEventListener('keydown', handleEnterNoBr))
+
+function insertOnCursorContent(node) {
+  const sel = document.getSelection()
+  const range = sel.getRangeAt(0)
+  range.deleteContents()
+  range.insertNode(node)
+  range.collapse()
+}
+
 function citeUrlUpdate() {
   const meta = $('meta[property="gholk:cite"]')
   meta.content = this.value
