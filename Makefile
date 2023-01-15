@@ -26,7 +26,7 @@ README.md.ref: README.md.body *.bookmarklet.js $(html_bookmarklet)
 	sh bookmarkletify.sh reference $< > $@
 
 index.html: README.md
-	(echo '<!DOCTYPE html><html>'; marked $<; echo '</html>') > $@
+	mark-dd $< > $@
 
 clean:
 	rm -rf README.md README.md.ref index.html *.bookmarklet.js

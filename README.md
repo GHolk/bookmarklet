@@ -1,11 +1,6 @@
-<title>gholk's bookmarklet and userscript</title>
-
 # gholk's bookmarklet and userscript
-
-<meta charset="UTF-8">
-
-<link rel="alternate" type="application/atom+xml"
-      href="https://github.com/GHolk/bookmarklet/commits/master.atom">
+GHolk 的小書籤、油猴腳本集合。
+還包含一種完整網頁的 data-url，一種完整的小工具網頁可以收在書籤裡。
 
 if you are in github.com,
 please go to
@@ -38,6 +33,12 @@ pre > code {
 }
 </style>
 
+<script class="template">
+const $ = dd.ch
+debug('template-load-dynamic', 'remove self')
+await dd.h.templateLoad('./template.html')
+</script>
+
 ## 訂閱
 懶得做 rss，請直接訂閱 [github 自動依 git 歷史產生的 rss][github rss] ，
 或直接 watch [github repository] 用 email 收 github 通知。
@@ -46,7 +47,7 @@ pre > code {
 [github repository]: https://github.com/GHolk/bookmarklet
 
 ## 授權 license
-若無指定，本頁面中所有腳本使用 [GPLv3] 授權。
+若無指定，本頁面中所有腳本使用 [GPLv3] 或其後續版本授權。
 
 all scripts in this page/repository are licensed under [GPLv3].
 
