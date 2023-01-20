@@ -34,8 +34,14 @@ pre > code {
 </style>
 
 <script class="template">
-const $ = dd.ch
-debug('template-load-dynamic', 'remove self')
+$('a[href ^= "javascript:"]').each((i, a) => {
+    const $a = $(a)
+    debug('bookmarklet-url', $a)
+    const url = $a.attr('href')
+    $a.attr('href',
+        url.replace(/(%[a-fA-F0-9]{2})+/g, c => decodeURIComponent(c))
+    )
+})
 await dd.h.templateLoad('./template.html')
 </script>
 
@@ -455,12 +461,6 @@ and the left column is split into upper and lower part.
 The upper-left is the textarea and the lower-left is the notification area.
 
 You have to add you mastodon instance url to this user style manually.
-
-<script>
-document.querySelectorAll('a').forEach(a => {
-    a.href = a.href.replace(/(%[a-fA-F0-9]{2})+/g, c => decodeURIComponent(c))
-})
-</script>
 
 ## [tg note]
 A basic html editor to compose rich text.

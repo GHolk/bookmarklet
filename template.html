@@ -32,7 +32,6 @@ content="bookmarklet, javascript, tool, greasemonkey, user-script, data-url">
 </main>
 
 <script class="template">
-  const $ = dd.ch
   $('title').text($('h1').text())
   $('meta[name=date]').attr('content', new Date().toISOString())
   $('meta[name=description]').attr('content', $('p').first().text())
