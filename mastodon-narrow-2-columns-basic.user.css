@@ -1,24 +1,43 @@
 /* ==UserStyle==
 @name           mastodon narrow 2 columns basic
 @namespace      github.com/GHolk
-@version        1.1.0
+@version        2.0.0
 @description    make mastodon web UI in 2 columns, so it works better in narrow window.
 @author         gholk
 ==/UserStyle== */
 @-moz-document url-prefix("https://g0v.social/web") {
     @media (max-width: 975px) {
         .columns-area {
-            flex-flow: column wrap;
-        }
-        .columns-area > *:first-child {
-            height: 66%;
+            display: block;
         }
         .columns-area > * {
-            height: 33%;
             width: 50%;
         }
-        .columns-area > *:last-child {
+        .columns-area > .drawer {
+            height: auto;
+        }
+        .columns-area > *:nth-child(2) {
             height: 100%;
+        }
+        .columns-area > .column:last-child {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+        }
+        .drawer__inner {
+            position: static;
+        }
+        .drawer__pager {
+            display: block;
+        }
+        .drawer__inner__mastodon {
+            display: none;
+        }
+        /* default drawer search results contain a long empty trend box */
+        .search-results > .trends {
+            display: none;
         }
         /* hide notification header */
         .column-header__wrapper, .notification__filter-bar {
