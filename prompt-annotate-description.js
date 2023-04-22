@@ -264,11 +264,12 @@ function downloadHtml() {
     function fixRelativeUrl(root) {
         let base = root.querySelector('base')
         if (base) {
+            // base.href could be relative url. set it to absolute url.
             const relative = base.getAttribute('href')
             base.dataset.gholkOriginalHref = relative
             base.setAttribute('href', base.href)
         }
-        else {
+        else if (window.location.protocol != 'data:') {
             base = document.createElement('base')
             base.href = root.baseURI
             base.dataset.gholkOriginalHref = ''
