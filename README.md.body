@@ -36,7 +36,6 @@ pre > code {
 <script class="template">
 $('a[href ^= "javascript:"]').each((i, a) => {
     const $a = $(a)
-    debug('bookmarklet-url', $a)
     const url = $a.attr('href')
     $a.attr('href',
         url.replace(/(%[a-fA-F0-9]{2})+/g, c => decodeURIComponent(c))
