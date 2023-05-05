@@ -4,11 +4,11 @@
  * @param {IDBDatabase} idbDatabase The database to export from
  * @return {Promise<string>}
  */
-export function exportToJson(idbDatabase) {
+function exportToObject(idbDatabase) {
   return new Promise((resolve, reject) => {
     const exportObject = {}
     if (idbDatabase.objectStoreNames.length === 0) {
-      resolve(JSON.stringify(exportObject))
+      resolve(exportObject)
     } else {
       const transaction = idbDatabase.transaction(
         idbDatabase.objectStoreNames,
@@ -37,13 +37,34 @@ export function exportToJson(idbDatabase) {
                 idbDatabase.objectStoreNames.length ===
                 Object.keys(exportObject).length
               ) {
-                resolve(JSON.stringify(exportObject))
+                resolve(exportObject)
               }
             }
           })
       }
     }
   })
+}
+
+async function exportToObjectAll(idbApi = indexedDB, list = null) {
+    if (!list) {
+        const dbs = await idbApi.databases()
+        list = dbs.map(db => db.name)
+    }
+    const result = {}
+    for (const name of list) {
+        const db = await openIdb(name)
+        result[name] = await exportToObject(db)
+    }
+    return result
+}
+
+function openIdb(name, idbApi = indexedDB) {
+    return new Promise((ok, error) => {
+        const req = idbApi.open(name)
+        req.onsuccess = e => ok(e.target.result)
+        req.onerror = e => error(e)
+    })
 }
 
 /**
@@ -54,7 +75,7 @@ export function exportToJson(idbDatabase) {
  * @param {string}      json        Data to import, one key per object store
  * @return {Promise<void>}
  */
-export function importFromJson(idbDatabase, json) {
+function importFromObject(idbDatabase, o) {
   return new Promise((resolve, reject) => {
     const transaction = idbDatabase.transaction(
       idbDatabase.objectStoreNames,
@@ -62,7 +83,7 @@ export function importFromJson(idbDatabase, json) {
     )
     transaction.addEventListener('error', reject)
 
-    var importObject = JSON.parse(json)
+    var importObject = o
     for (const storeName of idbDatabase.objectStoreNames) {
       let count = 0
       for (const toAdd of importObject[storeName]) {
@@ -89,7 +110,7 @@ export function importFromJson(idbDatabase, json) {
  * @param {IDBDatabase} idbDatabase The database to delete all data from
  * @return {Promise<void>}
  */
-export function clearDatabase(idbDatabase) {
+function clearDatabase(idbDatabase) {
   return new Promise((resolve, reject) => {
     const transaction = idbDatabase.transaction(
       idbDatabase.objectStoreNames,
