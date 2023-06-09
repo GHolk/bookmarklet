@@ -1,11 +1,12 @@
 /* ==UserStyle==
 @name           mastodon narrow 2 columns basic
 @namespace      github.com/GHolk
-@version        2.0.0
+@version        2.1.0
 @description    make mastodon web UI in 2 columns, so it works better in narrow window.
 @author         gholk
 ==/UserStyle== */
-@-moz-document url-prefix("https://g0v.social/web") {
+
+@-moz-document url-prefix("https://g0v.social/") {
     @media (max-width: 975px) {
         .columns-area {
             display: block;
@@ -40,7 +41,8 @@
             display: none;
         }
         /* hide notification header */
-        .column-header__wrapper, .notification__filter-bar {
+        .columns-area > *:nth-child(2) > .column-header__wrapper,
+        .notification__filter-bar {
             display: none;
         }
     }
