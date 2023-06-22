@@ -1,16 +1,23 @@
 // service worker
 
-import './node_modules/jszip/dist/jszip.min.js'
-import * as idb from './node_modules/idb/build/index.js'
+// import './node_modules/jszip/dist/jszip.min.js'
+// import * as idb from './node_modules/idb/build/index.js'
+importScripts('./node_modules/jszip/dist/jszip.min.js')
+importScripts('./node_modules/idb/build/umd.js')
 
 self.addEventListener('activate', e =>
     e.waitUntil(self.clients.claim())
 )
 
 const xdcr = {
+    async list() {
+        const db = await this.dbConnect()
+        const keyList = await db.getAllKeys(this.storeName)
+        return keyList
+    },
     async add(m) {
         const {file, name} = m
-        const id = this.idGen(file)
+        const id = await this.idGen(file)
         await this.addToDb({file, name, id}, id)
         return id
     },
@@ -23,16 +30,15 @@ const xdcr = {
         return s
     },
     async addToDb(x, key) {
-        for await (const store of this.storeConnect()) {
-            await store.add(x, key)
-        }
+        const db = await this.dbConnect()
+        await db.add(this.storeName, x, key)
+        this.cache.set(key, x)
     },
     async getFromDb(key) {
-        let x
-        for await (const store of this.storeConnect()) {
-            x = store.get(key)
-        }
-        return x
+        const c = this.cache
+        if (c.has(key)) return c.get(key)
+        const db = await this.dbConnect()
+        return await this.db.get(this.storeName, key)
     },
     cache: {
         map: new Map(),
@@ -46,6 +52,9 @@ const xdcr = {
             if (o.time <= this.timeout) {
                 this.map.delete(id)
             }
+        },
+        has(id) {
+            return this.map.has(id)
         },
         get(id) {
             const m = this.map
@@ -66,10 +75,10 @@ const xdcr = {
         const cache = this.cache
         let xdc = cache.get(id)
         if (!xdc) {
-            xdc = this.getFromDb(id)
+            xdc = await this.getFromDb(id)
             cache.set(id, xdc)
         }
-        const zip = await JSZip.loadAsync(xdc)
+        const zip = await JSZip.loadAsync(xdc.file)
         const blob = await zip.file(path).async('blob')
         if (!blob.name) blob.name = path
         return blob
@@ -78,18 +87,21 @@ const xdcr = {
     dbVersion: 1,
     dbName: 'webxdc-lib',
     async dbConnect() {
-        const store = this.storeName
-        this.db = await idb.openDB(this.dbName, this.dbVersion, {
-            upgrade(db, vold, vnew, tx, e) {
-                db.createObjectStore(store)
-            }
-        })
+        if (!this.db) {
+            const store = this.storeName
+            this.db = await idb.openDB(this.dbName, this.dbVersion, {
+                upgrade(db, vold, vnew, tx, e) {
+                    if (vold == 0) db.createObjectStore(store)
+                }
+            })
+        }
+        return this.db
     },
     storeName: 'xdc-zip-file',
     async *storeConnect(option = {}) {
         if (!this.db) await this.dbConnect()
         const mode = option.mode || 'readwrite'
-        const tx = await this.db.transaction(this.storeName)
+        const tx = this.db.transaction(this.storeName, mode)
         const store = tx.objectStore(this.storeName)
         yield store
         await tx.done
@@ -98,11 +110,18 @@ const xdcr = {
 
 self.addEventListener('message', async e => {
     const m = e.data
-    if (m.type == 'xdc-add') {
+    switch (m.type) {
+    case 'xdc-add':
         const id = await xdcr.add(m)
-        // e.response(id)
+        return reply(m, id)
+    case 'xdc-list':
+        const list = await xdcr.list()
+        return reply(m, list)
     }
 })
+
+function reply() {
+}
 
 const path = {
     cwd: '/bookmarklet/sw-xdc',
@@ -116,29 +135,29 @@ const path = {
 
 // fake/webxdc/by-id/%s/index.html
 // fake/webxdc/%s/index.html
-self.addEventListener('fetch', async event => {
+self.addEventListener('fetch', event => {
     const url = new URL(event.request.url)
     let sub
     let result
     if (sub = path.match('fake/eval/', url.pathname)) {
         result = eval(decodeURIComponent(sub))
-        if (result instanceof Object && result.then) result = await result
     }
     else if (sub = path.match('fake/webxdc/lib/by-id/', url.pathname)) {
         const id = sub.match(/^\w+/)[0]
         const path = sub.slice(id.length + 1)
-        result = await xdcr.getFileInside(id, path)
+        result = xdcr.getFileInside(id, path)
     }
     else return
     event.respondWith(toResponse(result))
 })
 
-function toResponse(x) {
+async function toResponse(x) {
+    if (x && x.then) x = await x
     let type = 'text/plain'
     if (x instanceof Object) {
         if (x.type) type = x.type
         else if (x.name) {
-            switch (x.name.match(/\.(.{1,8}?$)/).toLowerCase()) {
+            switch (x.name.match(/\.(.{1,8}?$)/)[1].toLowerCase()) {
             case 'js':
                 type = 'application/javascript'
                 break
