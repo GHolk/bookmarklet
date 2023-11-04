@@ -32,13 +32,10 @@ function exportToObject(idbDatabase) {
               // No more values, store is done
               exportObject[storeName] = allObjects
 
-              // Last store was handled
-              if (
-                idbDatabase.objectStoreNames.length ===
-                Object.keys(exportObject).length
-              ) {
-                resolve(exportObject)
+              for (const store of idbDatabase.objectStoreNames) {
+                if (!exportObject.hasOwnProperty(store)) return
               }
+              resolve(exportObject)
             }
           })
       }
