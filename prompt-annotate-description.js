@@ -227,8 +227,27 @@ function downloadHtml() {
         copy.querySelectorAll('iframe[src ^= moz-extension')
             .forEach(e => e.remove())
         fixRelativeUrl(copy)
+        disableScript(copy)
         fixEncode(copy)
         return copy
+    }
+    function disableScript(root) {
+        const scriptList = root.querySelectorAll("script")
+        for (const s of scriptList) {
+            if (s.src) {
+                const url = s.getAttribute("src")
+                s.removeAttribute("src")
+                s.dataset.gholkOriginalSrc = url
+            }
+            if (s.innerHTML) {
+                const code = s.innerHTML
+                s.innerHTML = ""
+                s.dataset.gholkOriginalCode = "code-in-next-comment"
+                const comment = document.createComment("")
+                comment.data = code.replace(/&/g, "&amp;").replace(/-->/g, "&m2arr;")
+                s.after(comment)
+            }
+        }
     }
     function fixEncode(root) {
         if (document.characterSet == 'UTF-8') return
@@ -262,6 +281,11 @@ function downloadHtml() {
         }
     }
     function fixRelativeUrl(root) {
+        const option = root.querySelector('meta[property="gholk:base"][content=nop]')
+        if (option) {
+            option.remove()
+            return
+        }
         let base = root.querySelector('base')
         if (base) {
             // base.href could be relative url. set it to absolute url.
