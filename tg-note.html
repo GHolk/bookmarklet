@@ -152,6 +152,7 @@ function keepLineBreakToggle() {
     this.removeAttribute('checked')
   }
 }
+
 function htmlToggle() {
   toggle = this.checked
   const toHtml = toggle
@@ -169,6 +170,22 @@ function htmlToggle() {
         node.style.height = node.scrollHeight + 'px'
       }
     }
+    block.addEventListener('dragover', e => {
+        if (e.dataTransfer.types.indexOf('Files') == -1) return
+        e.preventDefault()
+    })
+    block.addEventListener('drop', e => {
+        const d = e.dataTransfer
+        const files = Array.from(e.dataTransfer.files)
+        if (files.length == 0) return
+        e.preventDefault()
+        const ta = e.target
+        for (const f of files) {
+        const a = $create('a')
+        a.href = a.textContent = f.name
+        insertOnCursor(a.outerHTML + '\n', ta)
+        }
+    })
     block.oninput({target: block})
     main.removeAttribute('contenteditable')
   }
@@ -215,8 +232,8 @@ function handlePaste(e) {
     .replace(/'/g, '\x26apos;')
   insertOnCursor(escape)
 }
-function insertOnCursor(text) {
-  const node = $d.activeElement
+function insertOnCursor(text, node) {
+  if (!node) node = $d.activeElement
   node.setRangeText(text, node.selectionStart, node.selectionEnd)
   node.selectionStart = node.selectionEnd =
     node.selectionStart + text.length
