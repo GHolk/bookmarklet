@@ -1,0 +1,28 @@
+<html>
+<meta charset="UTF-8">
+<body>
+<script>
+var q = new URLSearchParams(window.location.search)
+var u = q.get('url')
+q.delete('url')
+var d = document
+var c = t => d.createElement(t)
+var form = c('form')
+form.method = 'POST'
+form.action = u
+if (q.has('charset')) {
+var cp = q.get('charset')
+q.delete('charset')
+form.acceptCharset = cp
+}
+for (const [k, v] of q) {
+let f = c('input')
+f.name = k
+f.value = v
+form.appendChild(f)
+}
+d.body.appendChild(form)
+form.submit()
+</script>
+</body>
+</html>
