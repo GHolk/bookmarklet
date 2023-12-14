@@ -478,3 +478,6 @@ if the field is not focused, only the selected number get in/decreased.
 When wheel on the `<input type="number">`,
 the browser should handle the wheel event itself.
 
+Add the website which you want to run this script to user match list.
+If you want only want the wheel get handled in some field in a url,
+add selector match it to the `url-map` config.

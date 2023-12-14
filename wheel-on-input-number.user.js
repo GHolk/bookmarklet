@@ -3,12 +3,13 @@
 // @namespace   http://gholk.github.io
 // @match       https://gholk.github.io/pdf-js-tool/pdf-js-tool.html
 // @grant       GM.getValue
-// @version     1.2
+// @version     1.3
 // @author      gholk
 // @description make mouse wheel increment or decrement number in text field or textarea.
 // ==/UserScript==
 
 GM.getValue('url-map').then(list => {
+  if (!list) list = []
   const config = list.find(c => new RegExp(c.regexp).test(window.location.href))
 
   window.addEventListener('wheel', event => {
@@ -22,6 +23,7 @@ GM.getValue('url-map').then(list => {
     const content = Number(input.value)
     if (Number.isNaN(content)) return
     input.value = (event.deltaY > 0) ? content-1 : content+1
+    event.preventDefault()
   }, {passive: false})
 })
 
