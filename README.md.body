@@ -464,3 +464,17 @@ You have to add you mastodon instance url to this user style manually.
 ## [tg note]
 A basic html editor to compose rich text.
 Designed to store article snippets with [annotate](#%5Bprompt-annotate-description%5D) .
+
+## [wheel on input number]
+Make mouse wheel increase or decrease the number in text field.
+Field can be textarea, `<input type="text">` or other editable input type
+(except the email, which does not support `input.selectionEnd`).
+
+When wheel on fields,
+if the field is focused, the selected number
+or the number at cursor or near by the cursor will be increased or decrease.
+if the field is not focused, only the selected number get in/decreased.
+
+When wheel on the `<input type="number">`,
+the browser should handle the wheel event itself.
+

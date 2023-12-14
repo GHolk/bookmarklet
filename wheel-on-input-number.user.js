@@ -5,7 +5,7 @@
 // @grant       GM.getValue
 // @version     1.2
 // @author      gholk
-// @description make mouse wheel increment or decrement number in form input field
+// @description make mouse wheel increment or decrement number in text field or textarea.
 // ==/UserScript==
 
 GM.getValue('url-map').then(list => {

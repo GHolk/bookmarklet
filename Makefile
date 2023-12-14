@@ -2,7 +2,7 @@
 all: README.md index.html
 
 html_bookmarklet = screen-message.html tg-note.html
-tridactyl_clean_list = download-html.js prompt-annotate-description.js
+tridactyl_clean_list =
 
 bbsjs.bookmarklet.js: bbsjs.user.js
 	sh bookmarkletify.sh $< > $@
