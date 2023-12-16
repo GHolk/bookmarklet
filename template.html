@@ -26,6 +26,12 @@ content="bookmarklet, javascript, tool, greasemonkey, user-script, data-url">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+  :target {
+      background: yellow;
+  }
+</style>
+
 </head>
 <body>
 <main>
@@ -42,6 +48,29 @@ content="bookmarklet, javascript, tool, greasemonkey, user-script, data-url">
       if ($(e).parent().contents().length == 1) $p.replaceWith($e)
   })
   $('head').append($('main style'))
+  $('*[id]').each((i, e) => {
+      let id = $(e).attr("id")
+      $(e).attr('id', idBracketClean(id))
+  })
+  function idBracketClean(id) {
+      if (id.indexOf("[") == -1) return id
+      const scan = id.match(/\[[^\]]*\]/)
+      return scan[0].slice(1, -1)
+  }
+  $.currentScript.after(
+      $('<script>').html(idBracketClean.toString())
+  )
+</script>
+
+<script>
+  if (window.location.hash) {
+      const h = decodeURIComponent(window.location.hash.slice(1))
+      if (h.indexOf('[') != -1) {
+          // in firefox, before the window load event,
+          // assign id does not scroll and trigger the :target selector.
+          setTimeout(() => window.location.hash = idBracketClean(h), 300)
+      }
+  }
 </script>
 
 </body></html>
