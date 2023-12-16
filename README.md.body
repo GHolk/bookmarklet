@@ -419,6 +419,9 @@ then google redirect the link to the destination.
 it is troublesome if you want to *coyp the link* in context menu.
 this user script remove these redirect.
 
+### [google search unredirect android firefox]
+this works for google search on firefox android version.
+
 ## [facebook notify]
 this user script will send browser notification
 when background facebook web page get notification.

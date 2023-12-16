@@ -2,7 +2,7 @@
 // @name     google search unredirect android firefox
 // @namespace http://gholk.github.io
 // @description remove redirect link in google search result page
-// @version  0.1
+// @version  0.2
 // @match    https://www.google.com/search?*
 // @grant    none
 // @license GPLv3
@@ -18,8 +18,6 @@ function unRedirect(a) {
 
 void function tryUnRedirect () {
     const allAnchor = document.querySelectorAll('a[href^= "/url?"')
-    if (allAnchor.length > 0) {
-        allAnchor.forEach(a => unRedirect(a))
-    }
+    if (allAnchor.length > 0) allAnchor.forEach(unRedirect)
     else setTimeout(tryUnRedirect, 500)
 }()
