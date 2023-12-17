@@ -3,7 +3,7 @@
 // @namespace   http://gholk.github.io
 // @match       https://gholk.github.io/pdf-js-tool/pdf-js-tool.html
 // @grant       GM.getValue
-// @version     1.3
+// @version     1.4
 // @author      gholk
 // @description make mouse wheel increment or decrement number in text field or textarea.
 // ==/UserScript==
@@ -17,6 +17,16 @@ GM.getValue('url-map').then(list => {
     const input = event.target
     if (config && !input.matches(config.selector)) return
 
+
+    let radio = null
+    if (input.nodeName == 'LABEL') {
+      if (input.control && input.control.type == 'radio') {
+        radio = input.control
+      }
+    }
+    if (input.type == 'radio' || radio) {
+      return wheelOnRadioHandler(radio || input, event)
+    }
     if (allowRangeSet(input)) {
       return moveStepOnNode(input, event)
     }
@@ -26,6 +36,19 @@ GM.getValue('url-map').then(list => {
     event.preventDefault()
   }, {passive: false})
 })
+
+function wheelOnRadioHandler(e, event) {
+    const step = event.deltaY > 0 ? 1 : -1
+    const name = e.name
+    if (e.disabled || e.hidden) return
+    event.preventDefault()
+    let l = Array.from(document.getElementsByName(name))
+    l = l.filter(e => !e.disabled && !e.hidden)
+    let i = l.findIndex(e => e.checked)
+    if (i == -1) i = step > 0 ? 0 : -1
+    else i += step
+    l.at(i % l.length).click()
+}
 
 // todo: single digit move 9-0, prevent negative
 function allowRangeSet(e) {
