@@ -18,15 +18,15 @@ GM.getValue('url-map').then(list => {
     if (config && !input.matches(config.selector)) return
 
 
-    let labele = null
+    let labele = input
     if (input.nodeName == 'LABEL' && input.control) {
       labele = input.control
     }
-    if ((labele || input).type == 'radio') {
-      return wheelOnRadioHandler(radio || input, event)
+    if (labele.type == 'radio') {
+      return wheelOnRadioHandler(labele, event)
     }
-    if ((labele || input).nodeName == 'SELECT') {
-      return moveStepOnSelect(input, event)
+    if (labele.nodeName == 'SELECT') {
+      return moveStepOnSelect(labele, event)
     }
     if (allowRangeSet(input)) {
       return moveStepOnNode(input, event)
