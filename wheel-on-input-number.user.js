@@ -3,7 +3,7 @@
 // @namespace   http://gholk.github.io
 // @match       https://gholk.github.io/pdf-js-tool/pdf-js-tool.html
 // @grant       GM.getValue
-// @version     1.5
+// @version     1.6
 // @author      gholk
 // @description make mouse wheel increment or decrement number in text field or textarea.
 // ==/UserScript==
@@ -35,7 +35,7 @@ GM.getValue('url-map').then(list => {
     const content = Number(input.value)
     if (Number.isNaN(content)) return
     nop(event)
-    input.value = (event.deltaY > 0) ? content-1 : content+1
+    input.value = padTo((event.deltaY > 0) ? content-1 : content+1, input.value)
     eventSendAuto(input)
   }, {passive: false})
 })
@@ -46,15 +46,26 @@ function nop(e) {
 
 function isTextBox(e) {
   const n = e.nodeName
-  return (n == 'INPUT' || n == 'TEXTAREA') &&
-    'selectionStart' in e
+    // if scrollable
+    if (e.scrollHeight > e.offsetHeight) return false
+    if (n == 'TEXTAREA') return true
+    if (n != 'INPUT') return false
+    switch (e.type) {
+        case 'search':
+        case 'tel':
+        case 'search':
+        case 'text':
+        case 'email':
+        return true
+    }
+    return false
 }
 
 function wheelOnRadioHandler(e, event) {
     const step = event.deltaY > 0 ? 1 : -1
     const name = e.name
     if (e.disabled || e.hidden) return
-    event.preventDefault()
+    nop(event)
     let l = Array.from(document.getElementsByName(name))
     l = l.filter(e => !e.disabled && !e.hidden)
     let i = l.findIndex(e => e.checked)
@@ -67,6 +78,8 @@ function wheelOnRadioHandler(e, event) {
 function allowRangeSet(e) {
   return e.type != 'number' && // number has built-in wheel event support
     e.selectionStart != null && // a text field element
+      // user does not need scrolling
+      e.scrollHeight <= e.offsetHeight &&
       // detect number on cursor only when focus
       (e == document.activeElement ||
       // always detect number if any text selected
@@ -88,31 +101,30 @@ function moveStepOnNode(e, event) {
   if (start != end) {
     const scan = e.value.substring(start, end).match(/\d+/)
     if (!scan) return
-    event.preventDefault()
-    const n = Number(scan[0])
-    e.setRangeText(moveStep2s(n, step), start + scan.index, start + scan.index + scan[0].length)
+    nop(event)
+    e.setRangeText(moveStep2s(scan[0], step), start + scan.index, start + scan.index + scan[0].length)
     eventSendAuto(e)
     return
   }
   for (const scan of e.value.matchAll(/\d+/g)) {
     if (scan.index > end) break
     if (scan.index <= end && end <= scan.index + scan[0].length) {
-      event.preventDefault()
-      const n = Number(scan[0])
-      e.setRangeText(moveStep2s(n,step), scan.index, scan.index+scan[0].length, 'end')
+      nop(event)
+      e.setRangeText(moveStep2s(scan[0],step), scan.index, scan.index+scan[0].length, 'end')
       eventSendAuto(e)
       break
     }
   }
 }
-function moveStep2s(n, step) {
+function moveStep2s(s, step) {
+  const n = Number(s)
   let n2 = n + step
   if (n2 < 0) n2 = n
-  return String(n2)
+  return padTo(n2, s)
 }
 
 function moveStepOnSelect(e, event) {
-  event.preventDefault()
+  nop(event)
   const n = event.deltaY > 0 ? 1 : -1
   const index = e.selectedIndex + n
   if (index < 0 || e.length <= index) return null
@@ -120,4 +132,11 @@ function moveStepOnSelect(e, event) {
   eventSend(e, 'input')
   eventSend(e, 'change')
   return index
+}
+
+function padTo(x, t) {
+    let s = String(x)
+    if (x < 0) return s
+    while (s.length < t.length) s = '0' + s
+    return s
 }
