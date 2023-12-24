@@ -136,7 +136,13 @@ function moveStepOnSelect(e, event) {
 
 function padTo(x, t) {
     let s = String(x)
-    if (x < 0) return s
+    let negative = false
+    if (t.charAt(0) == '-') t = t.slice(1)
+    if (s.charAt(0) == '-') {
+        s = s.slice(1)
+        negative = true
+    }
     while (s.length < t.length) s = '0' + s
+    if (negative) s = '-' + s
     return s
 }
