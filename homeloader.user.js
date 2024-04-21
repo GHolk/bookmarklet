@@ -3,7 +3,7 @@
 // @namespace http://gholk.github.io
 // @description download and archive webpage
 // @match https://home.gamer.com.tw/*
-// @version 0.4.0
+// @version 0.5.0
 // @license AGPLv3
 // @grant GM_download
 // @grant GM_getValue
@@ -132,6 +132,7 @@ load() {
       "image-selector": ";gl.$$('img.gallery-image, .reply-box article img, .image-setting img', root).filter(e=>!/https:.*.bahamut.com.tw.(editor.emotion|icon_videoplayer)/.test(e.src))",
       "hook-download-pre": "gl.$('#reply_expand')?.click()",
       "hook-lazy-load": null,
+      "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\\((.*)\\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
       "action": {
         "next": "gl.$$('[data-button=changePage]').slice(-1)[0].click()"
       },
@@ -229,16 +230,6 @@ const action = {
             const m = gl.create('meta')
             gl.$(`#${toolboxId}`, root).remove()
             m.setAttribute('property', 'gholk:info')
-            let author, folder
-            {
-                const a = gl.$('.article-content.title a.caption-text', root)
-                if (a) {
-                    const js = a.getAttribute('onclick')
-                    const parm = js.match(/^.*\((.*)\).*$/)[1]
-                    const l = eval(`[${parm}]`)
-                    ;[author, folder] = l
-                }
-            }
             gl.$('head', root).appendChild(m)
 
             if (c['hook-lazy-load']) eval(c['hook-lazy-load'])
@@ -255,11 +246,12 @@ const action = {
                 imageList.push(...localizeImage(p, `${basename}-${i}`))
                 i++
             }
-            m.content = dictToQs({
-                url: String(window.location.href),
-                author, folder,
-                image: imageList
-            })
+
+            const info = {}
+            info.url = String(window.location.href)
+            info.image = imageList
+            if (c['hook-info']) eval(c['hook-info'])
+            m.content = dictToQs(info)
         }
         function localizeImage(e, uniq) {
             const f = uniq

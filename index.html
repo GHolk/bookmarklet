@@ -8,7 +8,7 @@
 <meta name="copyright" content="GPLv3+">
 <meta name="generator" content="mark-dd">
 
-<meta name="date" property="og:article:public_time" content="2024-04-21T07:47:20.372Z">
+<meta name="date" property="og:article:public_time" content="2024-04-21T13:10:36.658Z">
 <meta name="keywords" property="og:article:tag" content="bookmarklet, javascript, tool, greasemonkey, user-script, data-url">
 <meta name="description" property="og:description" content="GHolk 的小書籤、油猴腳本集合。
 還包含一種完整網頁的 data-url，一種完整的小工具網頁可以收在書籤裡。">
@@ -45,6 +45,18 @@ pre > code {
   padding: 0.8em;
   white-space: pre-wrap;
 }
+</style><style>
+.literate-block-section code {
+  border-top: 0;
+  border-bottom: 0;
+  background: #EEE;
+}
+.literate-block-section {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.literate-block-section.first code { border-top: 1px solid; }
+.literate-block-section.last code { border-bottom: 1px solid; }
 </style></head>
 <body>
 <main>
@@ -225,7 +237,7 @@ PttNewhand z-8-8-2
 <pre><code>z-8-8-2
 8. 8. 2
 </code></pre><h2 id="homeloader-下載網頁與內容圖片的浮動工具箱"><a href="homeloader.user.js">homeloader 下載網頁與內容圖片的浮動工具箱</a></h2>
-<p>user.js，在網頁右下角會出現數個 <code>download</code> 的浮動按鈕，
+<p>user.js，在網頁右下角會出現 <code>download</code> 與數個可自訂的浮動按鈕，
 按了會下載目前網頁內容與圖片，下載下來的網頁中圖片會變成相對路徑。
 主要是在手機上使用，因為手機上要呼叫附加元件不太方便，
 要 <em>開選單 / 附加元件 / WebScrapbook</em> 三個步驟。</p>
@@ -239,37 +251,62 @@ PttNewhand z-8-8-2
 <h3 id="homeloader-設定說明">homeloader 設定說明</h3>
 <p>以下以預設的 json 設定檔說明，
 使用交雜 code block 與文字的方式解說。</p>
-<pre><code>{
+
+<script>
+  function literateBlockSectionToggleText(event) {
+    const p = event.target.parentNode
+    const bl = []
+    let e = p.nextElementSibling
+    while (e) {
+      const name = e.nodeName
+      if (name == 'PRE' && e.matches('.last')) break
+      else if (name != 'PRE') bl.push(e)
+      e = e.nextElementSibling
+    }
+    bl.forEach(e => e.hidden = !e.hidden)
+  }
+</script>
+
+
+
+<p><button onclick="literateBlockSectionToggleText(event)">toggle text</button></p>
+<pre class="literate-block-section first"><code class="lang-json">{
   "match": {
 </code></pre><p>所有設定會存在 match 這個 key</p>
-<pre><code>    "home.gamer.com.tw/artwork.php": {
+<pre class="literate-block-section"><code class="lang-json">    "home.gamer.com.tw/artwork.php": {
 </code></pre><p>match 的 key 填網址的子字串。
-執行時會使用第一個符合目前網址的子字串的設定檔。</p>
-<pre><code>      "image-selector": ";gl.$$('img.gallery-image, .reply-box article img, .image-setting img', root).filter(e=&gt;!/https:.*.bahamut.com.tw.(editor.emotion|icon_videoplayer)/.test(e.src))",
+執行時會使用第一個符合目前網址的子字串的設定檔。
+（ <code>window.location.href.indexOf(key) != -1</code> ）</p>
+<pre class="literate-block-section"><code class="lang-json">      "image-selector": ";gl.$$('img.gallery-image, .reply-box article img, .image-setting img', root).filter(e=&gt;!/https:.*.bahamut.com.tw.(editor.emotion|icon_videoplayer)/.test(e.src))",
 </code></pre><p>如果 image-selector 是分號開頭的字串，
 則會 eval 字串並將回傳值作為圖片清單。
 否則將其作為 css selector，選擇所有符合的圖片作為清單。</p>
-<pre><code>      "hook-download-pre": "gl.$('#reply_expand')?.click()",
+<pre class="literate-block-section"><code class="lang-json">      "hook-download-pre": "gl.$('#reply_expand')?.click()",
 </code></pre><p>在按下載按鈕後會先執行 hook-download-pre 程式碼
 再開始執行 user.js 裡預定義的所有下載邏輯，如 image-selector 等。</p>
-<pre><code>      "hook-lazy-load": null,
+<pre class="literate-block-section"><code class="lang-json">      "hook-lazy-load": null,
 </code></pre><p>如果有定義，在使用 image-selector 前會先執行本段 code。
 主要用來處某些未定義 <code>img[src]</code> 的延遲載入圖片。
 如果 falsy 則使用預設的邏輯，將所有 src falsy 的 img src 設為 data-src。
 要跳過可以寫個 <code>"1"</code> 之類的 truely 的可以 eval 的值。</p>
-<pre><code>      "action": {
+<pre class="literate-block-section"><code class="lang-json">      "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\((.*)\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
+</code></pre><p>如果有定義，會在選擇圖片後執行本段程式，
+用來在下載的網頁中塞入任何想存的資料。
+info 是 js dict，儲存時會轉成 querystring，
+儲存為 <code>&lt;meta property="gholk:info" content="..."&gt;</code> content 屬性中。</p>
+<pre class="literate-block-section"><code class="lang-json">      "action": {
         "next": "gl.$$('[data-button=changePage]').slice(-1)[0].click()"
       },
 </code></pre><p>可以自定義按鈕，action 的 key 會作為按鈕文字、css class，
 value 會在執行時 eval。</p>
-<pre><code>      "wait-touch": true,
+<pre class="literate-block-section"><code class="lang-json">      "wait-touch": true,
 </code></pre><p>為真時會在每次下載前等待一次 window touchend 事件再繼續下載。
 防止 android firefox 無間隔連續下載失敗的 bug。</p>
-<pre><code>      "style": "#gholk-homeloader-toolbox button { border: 1px outset; padding: 0.2em; background: white; height:3em; display:block; margin-bottom:0.5em; margin-left:auto;} #gholk-homeloader-toolbox { bottom:8em; top: unset; } #gholk-homeloader-toolbox button[disabled] { color: gray; font-weight; bold; }"
+<pre class="literate-block-section"><code class="lang-json">      "style": "#gholk-homeloader-toolbox button { border: 1px outset; padding: 0.2em; background: white; height:3em; display:block; margin-bottom:0.5em; margin-left:auto;} #gholk-homeloader-toolbox { bottom:8em; top: unset; } #gholk-homeloader-toolbox button[disabled] { color: gray; font-weight; bold; }"
 </code></pre><p>css，主要用來調整各網頁工具箱按鈕出現的位置。
 各按鈕會包在 <code>aside#gholk-homeloader-toolbox</code> 內，
 以 <code>display:fixed</code> 顯示在左下角。</p>
-<pre><code>    }
+<pre class="literate-block-section last"><code class="lang-json">    }
   }
 }
 </code></pre><h2 id="儲存頁面-html"><a href="javascript:void function () {function doctypeToString(node=document.doctype){return node?&quot;<!DOCTYPE &quot;+node.name+(node.publicId?` PUBLIC &quot;${node.publicId}&quot;`:&quot;&quot;)+(!node.publicId&amp;&amp;node.systemId?&quot; SYSTEM&quot;:&quot;&quot;)+(node.systemId?` &quot;${node.systemId}&quot;`:&quot;&quot;)+&quot;>\n&quot;:&quot;&quot;}function cleanCopy(root){const copy=root.cloneNode(!0);return copy.querySelectorAll(&quot;iframe[src ^= moz-extension&quot;).forEach(e=>e.remove()),fixRelativeUrl(copy),copy}function fixEncode(root){if(&quot;UTF-8&quot;==document.characterSet)return;const list=root.querySelectorAll(&quot;meta[http-equiv=content-type],meta[http-equiv=Content-Type],meta[charset]&quot;);if(0==list.length){if(!confirm(&quot;not UTF-8 and no charset tag found, add one?&quot;))return;const encodeNode=document.createElement(&quot;meta&quot;);encodeNode.setAttribute(&quot;charset&quot;,&quot;utf-8&quot;),encodeNode.dataset.gholkOriginalCharset=&quot;&quot;;const head=root.querySelector(&quot;head&quot;);head?head.prepend(encodeNode):root.prepend(encodeNode)}else list.forEach(encodeNode=>{if(encodeNode.hasAttribute(&quot;charset&quot;)){const original=encodeNode.getAttribute(&quot;charset&quot;);encodeNode.dataset.gholkOriginalCharset=original,encodeNode.setAttribute(&quot;charset&quot;,&quot;utf-8&quot;)}else encodeNode.hasAttribute(&quot;http-equiv&quot;)?(encodeNode.dataset.gholkOriginalContentType=encodeNode.content,encodeNode.content=&quot;text/html; charset=UTF-8&quot;):alert(`unknown error while fix encode node: ${encodeNode.outerHTML}`)})}function fixRelativeUrl(root){let base=root.querySelector(&quot;base&quot;);if(base){const relative=base.getAttribute(&quot;href&quot;);base.dataset.gholkOriginalHref=relative,base.setAttribute(&quot;href&quot;,base.href)}else{(base=document.createElement(&quot;base&quot;)).href=root.baseURI,base.dataset.gholkOriginalHref=&quot;&quot;;let head=root.querySelector(&quot;head&quot;);head?head.prepend(base):root.prepend(base)}}const html=doctypeToString()+cleanCopy(document.documentElement).outerHTML,blob=new Blob([html],{type:&quot;text/html&quot;}),download=document.createElement(&quot;a&quot;);download.download=document.title+&quot;.html&quot;,download.href=URL.createObjectURL(blob),document.body.appendChild(download),download.click(),download.remove(),alert(&quot;cleaning blob?&quot;),URL.revokeObjectURL(blob);}()">儲存頁面 html</a></h2>

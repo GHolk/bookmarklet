@@ -252,7 +252,7 @@ z-8-8-2
 ```
 
 ## [homeloader 下載網頁與內容圖片的浮動工具箱][homeloader.user.js]
-user.js，在網頁右下角會出現數個 `download` 的浮動按鈕，
+user.js，在網頁右下角會出現 `download` 與數個可自訂的浮動按鈕，
 按了會下載目前網頁內容與圖片，下載下來的網頁中圖片會變成相對路徑。
 主要是在手機上使用，因為手機上要呼叫附加元件不太方便，
 要 *開選單 / 附加元件 / WebScrapbook* 三個步驟。
@@ -268,6 +268,54 @@ user.js，在網頁右下角會出現數個 `download` 的浮動按鈕，
 以下以預設的 json 設定檔說明，
 使用交雜 code block 與文字的方式解說。
 
+```--e
+dd.anchor['literate-block-section'] = $e => {
+  const lang = $e.attr('href').split(' ')[1]
+  let $b = $e.parent().nextUntil('h1,h2,h3,h4,h5,h6,hr').filter((i,e) => {
+    return $(e).is('pre')
+  })
+  $b.find('code').addClass(`lang-${lang}`)
+  $b.addClass('literate-block-section')
+  $b.first().addClass('first')
+  $b.last().addClass('last')
+
+  let $t = $('<button>').text('toggle text')
+  $t.attr('onclick', 'literateBlockSectionToggleText(event)')
+  $e.replaceWith($t)
+}
+```
+
+<script>
+  function literateBlockSectionToggleText(event) {
+    const p = event.target.parentNode
+    const bl = []
+    let e = p.nextElementSibling
+    while (e) {
+      const name = e.nodeName
+      if (name == 'PRE' && e.matches('.last')) break
+      else if (name != 'PRE') bl.push(e)
+      e = e.nextElementSibling
+    }
+    bl.forEach(e => e.hidden = !e.hidden)
+  }
+</script>
+
+<style>
+.literate-block-section code {
+  border-top: 0;
+  border-bottom: 0;
+  background: #EEE;
+}
+.literate-block-section {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.literate-block-section.first code { border-top: 1px solid; }
+.literate-block-section.last code { border-bottom: 1px solid; }
+</style>
+
+[..literate-block-section json](.)
+
     {
       "match": {
 
@@ -277,6 +325,7 @@ user.js，在網頁右下角會出現數個 `download` 的浮動按鈕，
 
 match 的 key 填網址的子字串。
 執行時會使用第一個符合目前網址的子字串的設定檔。
+（ `window.location.href.indexOf(key) != -1` ）
 
           "image-selector": ";gl.$$('img.gallery-image, .reply-box article img, .image-setting img', root).filter(e=>!/https:.*.bahamut.com.tw.(editor.emotion|icon_videoplayer)/.test(e.src))",
 
@@ -295,6 +344,13 @@ match 的 key 填網址的子字串。
 主要用來處某些未定義 `img[src]` 的延遲載入圖片。
 如果 falsy 則使用預設的邏輯，將所有 src falsy 的 img src 設為 data-src。
 要跳過可以寫個 `"1"` 之類的 truely 的可以 eval 的值。
+
+          "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\((.*)\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
+
+如果有定義，會在選擇圖片後執行本段程式，
+用來在下載的網頁中塞入任何想存的資料。
+info 是 js dict，儲存時會轉成 querystring，
+儲存為 `<meta property="gholk:info" content="...">` content 屬性中。
 
           "action": {
             "next": "gl.$$('[data-button=changePage]').slice(-1)[0].click()"
