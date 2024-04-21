@@ -30,6 +30,7 @@ code {
 pre > code {
   display: block;
   padding: 0.8em;
+  white-space: pre-wrap;
 }
 </style>
 
@@ -249,6 +250,73 @@ PttNewhand z-8-8-2
 z-8-8-2
 8. 8. 2
 ```
+
+## [homeloader 下載網頁與內容圖片的浮動工具箱][homeloader.user.js]
+user.js，在網頁右下角會出現數個 `download` 的浮動按鈕，
+按了會下載目前網頁內容與圖片，下載下來的網頁中圖片會變成相對路徑。
+主要是在手機上使用，因為手機上要呼叫附加元件不太方便，
+要 *開選單 / 附加元件 / WebScrapbook* 三個步驟。
+
+預設在巴哈小屋新版介面使用，
+如果要在其他網站使用需要自己修改設定：
+
+ 1. 將該網站網址加入 user.js 的 `@match` 或 `@include`
+ 2. 填寫設定檔存的 json 資料 `GM_getValue` 的資料，
+    在 match 資料中填寫該網站的網址。
+
+### homeloader 設定說明
+以下以預設的 json 設定檔說明，
+使用交雜 code block 與文字的方式解說。
+
+    {
+      "match": {
+
+所有設定會存在 match 這個 key
+
+        "home.gamer.com.tw/artwork.php": {
+
+match 的 key 填網址的子字串。
+執行時會使用第一個符合目前網址的子字串的設定檔。
+
+          "image-selector": ";gl.$$('img.gallery-image, .reply-box article img, .image-setting img', root).filter(e=>!/https:.*.bahamut.com.tw.(editor.emotion|icon_videoplayer)/.test(e.src))",
+
+如果 image-selector 是分號開頭的字串，
+則會 eval 字串並將回傳值作為圖片清單。
+否則將其作為 css selector，選擇所有符合的圖片作為清單。
+
+          "hook-download-pre": "gl.$('#reply_expand')?.click()",
+
+在按下載按鈕後會先執行 hook-download-pre 程式碼
+再開始執行 user.js 裡預定義的所有下載邏輯，如 image-selector 等。
+
+          "hook-lazy-load": null,
+
+如果有定義，在使用 image-selector 前會先執行本段 code。
+主要用來處某些未定義 `img[src]` 的延遲載入圖片。
+如果 falsy 則使用預設的邏輯，將所有 src falsy 的 img src 設為 data-src。
+要跳過可以寫個 `"1"` 之類的 truely 的可以 eval 的值。
+
+          "action": {
+            "next": "gl.$$('[data-button=changePage]').slice(-1)[0].click()"
+          },
+
+可以自定義按鈕，action 的 key 會作為按鈕文字、css class，
+value 會在執行時 eval。
+
+          "wait-touch": true,
+
+為真時會在每次下載前等待一次 window touchend 事件再繼續下載。
+防止 android firefox 無間隔連續下載失敗的 bug。
+
+          "style": "#gholk-homeloader-toolbox button { border: 1px outset; padding: 0.2em; background: white; height:3em; display:block; margin-bottom:0.5em; margin-left:auto;} #gholk-homeloader-toolbox { bottom:8em; top: unset; } #gholk-homeloader-toolbox button[disabled] { color: gray; font-weight; bold; }"
+
+css，主要用來調整各網頁工具箱按鈕出現的位置。
+各按鈕會包在 `aside#gholk-homeloader-toolbox` 內，
+以 `display:fixed` 顯示在左下角。
+
+        }
+      }
+    }
 
 
 ## [儲存頁面 html][download-html.bookmarklet.js]
