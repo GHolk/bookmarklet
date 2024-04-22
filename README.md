@@ -10,6 +10,10 @@ to use drag drop to add bookmarklet,
 because github disable bookmarklet in
 README.md in github repository page.
 
+```--toc
+目錄
+```
+
 ## 小書籤安裝方法
 長按標題的小書籤超連結，拖曳到書籤列即安裝完成；
 點擊書籤列中的小書籤即可在當下頁面中執行。
@@ -43,6 +47,7 @@ $('a[href ^= "javascript:"]').each((i, a) => {
     )
 })
 await dd.h.templateLoad('./template.html')
+await dd.h.moduleAdd('toc')
 </script>
 
 ## 訂閱
@@ -345,7 +350,7 @@ match 的 key 填網址的子字串。
 如果 falsy 則使用預設的邏輯，將所有 src falsy 的 img src 設為 data-src。
 要跳過可以寫個 `"1"` 之類的 truely 的可以 eval 的值。
 
-          "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\((.*)\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
+          "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\\((.*)\\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
 
 如果有定義，會在選擇圖片後執行本段程式，
 用來在下載的網頁中塞入任何想存的資料。

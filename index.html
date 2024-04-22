@@ -8,7 +8,7 @@
 <meta name="copyright" content="GPLv3+">
 <meta name="generator" content="mark-dd">
 
-<meta name="date" property="og:article:public_time" content="2024-04-21T13:10:36.658Z">
+<meta name="date" property="og:article:public_time" content="2024-04-22T12:42:31.572Z">
 <meta name="keywords" property="og:article:tag" content="bookmarklet, javascript, tool, greasemonkey, user-script, data-url">
 <meta name="description" property="og:description" content="GHolk 的小書籤、油猴腳本集合。
 還包含一種完整網頁的 data-url，一種完整的小工具網頁可以收在書籤裡。">
@@ -57,6 +57,33 @@ pre > code {
 }
 .literate-block-section.first code { border-top: 1px solid; }
 .literate-block-section.last code { border-bottom: 1px solid; }
+</style><style class="toc">
+.toc {
+    border: black solid 1px;
+    padding: 1em;
+    margin: 1em;
+    float: right;
+    max-width: 40%;
+    font-weight: bold;
+}
+.toc h2 {
+    margin: 0;
+}
+.toc ul {
+    font-size: 1em;
+    margin: 0.2em;
+    padding: 0;
+    list-style: none;
+}
+.toc li:before {
+    content: '- ';
+}
+.toc .level-h1 { margin-left: 0em; }
+.toc .level-h2 { margin-left: 1em; }
+.toc .level-h3 { margin-left: 2em; }
+.toc .level-h4 { margin-left: 3em; }
+.toc .level-h5 { margin-left: 4em; }
+.toc .level-h6 { margin-left: 5em; }
 </style></head>
 <body>
 <main>
@@ -70,6 +97,7 @@ or <a href="index.html">index.html</a>
 to use drag drop to add bookmarklet,
 because github disable bookmarklet in
 README.md in github repository page.</p>
+<div id="toc" class="toc"><h2>目錄</h2><ul><li class="level-h1"><a href="#gholk's-bookmarklet-and-userscript">gholk's bookmarklet and userscript</a></li><li class="level-h2"><a href="#小書籤安裝方法">小書籤安裝方法</a></li><li class="level-h2"><a href="#訂閱">訂閱</a></li><li class="level-h2"><a href="#授權-license">授權 license</a></li><li class="level-h2"><a href="#youtube-clean-player">youtube clean player</a></li><li class="level-h2"><a href="#custom-search">custom search</a></li><li class="level-h2"><a href="#jumper-translator">jumper translator</a></li><li class="level-h2"><a href="#generate-url-qrcode">generate url qrcode</a></li><li class="level-h2"><a href="#facebook-video-rotate">facebook video rotate</a></li><li class="level-h2"><a href="#enable-select-contextmenu-小書籤版">enable select contextmenu 小書籤版</a></li><li class="level-h2"><a href="#enable-select-contextmenu-油猴腳本">enable select contextmenu 油猴腳本</a></li><li class="level-h2"><a href="#強制啟用貼上功能">強制啟用貼上功能</a></li><li class="level-h3"><a href="#強制啟用貼上功能小書籤版">強制啟用貼上功能小書籤版</a></li><li class="level-h2"><a href="#facebook-image-downloader">facebook image downloader</a></li><li class="level-h2"><a href="#press-b-to-google">press b to google</a></li><li class="level-h2"><a href="#hackmd-scroll-flip">hackmd scroll flip</a></li><li class="level-h2"><a href="#moodle-backup">moodle backup</a></li><li class="level-h2"><a href="#screen-message">screen message</a></li><li class="level-h2"><a href="#map-alpha-to-number-pad">map alpha to number pad</a></li><li class="level-h2"><a href="#e3new-grade">e3new grade</a></li><li class="level-h2"><a href="#e3new-entitle">e3new entitle</a></li><li class="level-h2"><a href="#paste-to-form-file-小書籤版">paste to form file 小書籤版</a></li><li class="level-h2"><a href="#paste-to-form-file-油猴腳本">paste to form file 油猴腳本</a></li><li class="level-h2"><a href="#PTT-精華區網址查詢器">PTT 精華區網址查詢器</a></li><li class="level-h2"><a href="#homeloader-下載網頁與內容圖片的浮動工具箱">homeloader 下載網頁與內容圖片的浮動工具箱</a></li><li class="level-h3"><a href="#homeloader-設定說明">homeloader 設定說明</a></li><li class="level-h2"><a href="#儲存頁面-html">儲存頁面 html</a></li><li class="level-h2"><a href="#prompt-annotate-description">prompt annotate description</a></li><li class="level-h2"><a href="#github-fork-compare">github fork compare</a></li><li class="level-h2"><a href="#paste-to-form-file-userscript-version">paste to form file userscript version</a></li><li class="level-h2"><a href="#msrt-ccf-dice-tool">msrt ccf dice tool</a></li><li class="level-h3"><a href="#中文說明">中文說明</a></li><li class="level-h2"><a href="#google-search-unredirect">google search unredirect</a></li><li class="level-h3"><a href="#google-search-unredirect-android-firefox">google search unredirect android firefox</a></li><li class="level-h2"><a href="#facebook-notify">facebook notify</a></li><li class="level-h2"><a href="#happy-html-keyboard-player">happy html keyboard player</a></li><li class="level-h2"><a href="#mastodon-narrow-2-columns-basic">mastodon narrow 2 columns basic</a></li><li class="level-h2"><a href="#tg-note">tg note</a></li><li class="level-h2"><a href="#wheel-on-input-number">wheel on input number</a></li></ul></div>
 <h2 id="小書籤安裝方法">小書籤安裝方法</h2>
 <p>長按標題的小書籤超連結，拖曳到書籤列即安裝完成；
 點擊書籤列中的小書籤即可在當下頁面中執行。</p>
@@ -289,7 +317,7 @@ PttNewhand z-8-8-2
 主要用來處某些未定義 <code>img[src]</code> 的延遲載入圖片。
 如果 falsy 則使用預設的邏輯，將所有 src falsy 的 img src 設為 data-src。
 要跳過可以寫個 <code>"1"</code> 之類的 truely 的可以 eval 的值。</p>
-<pre class="literate-block-section"><code class="lang-json">      "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\((.*)\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
+<pre class="literate-block-section"><code class="lang-json">      "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\\((.*)\\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
 </code></pre><p>如果有定義，會在選擇圖片後執行本段程式，
 用來在下載的網頁中塞入任何想存的資料。
 info 是 js dict，儲存時會轉成 querystring，
