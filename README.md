@@ -379,6 +379,29 @@ css，主要用來調整各網頁工具箱按鈕出現的位置。
       }
     }
 
+## [Bookmarklet Editor by gholk](vendor/bookmarklet-editor-gholk-embed.html)
+A single-file full-feature bookmarklet editor, work locally.
+features:
+
+  - syntax-highlight editor
+  - uglify-js
+  - wrap code in IIFE
+  - split code to multiple bookmark to
+    bypass the browser's bookmark length limit.
+  - add emoji to bookmarklet name make it look good!
+  - share the bookmarklet link by save the whole html page and share the html.
+    you can write usage as comment in the editor.
+
+this editor content shall be too large to the browser's bookmark,
+so it was not encoded as a dataurl.
+
+to install it, right click and save the link as a local file,
+or just add it to bookmark.
+
+this editor is fork from
+[amitind's bookmarklet editor][amitind editor] on codepen.
+
+[amitind editor]: https://codepen.io/amitind/pen/pQVwQp
 
 ## [儲存頁面 html][download-html.bookmarklet.js]
 將目前網頁的 html 內容儲存為檔案，
