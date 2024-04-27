@@ -1,5 +1,5 @@
 
-all: README.md index.html
+all: README.md index.html vendor/bookmarklet-editor-gholk-embed.html
 
 html_bookmarklet = screen-message.html tg-note.html
 tridactyl_clean_list =
@@ -27,6 +27,9 @@ README.md.ref: README.md.body *.bookmarklet.js $(html_bookmarklet)
 
 index.html: README.md
 	mark-dd $< > $@
+
+vendor/bookmarklet-editor-gholk-embed.html: bookmarklet-editor-gholk.html
+	mark-dd --html -r embed $< > $@
 
 clean:
 	rm -rf README.md README.md.ref index.html *.bookmarklet.js

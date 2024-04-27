@@ -3,7 +3,7 @@
 // @namespace http://gholk.github.io
 // @description download and archive webpage
 // @match https://home.gamer.com.tw/*
-// @version 0.5.0
+// @version 0.6.0
 // @license AGPLv3
 // @grant GM_download
 // @grant GM_getValue
@@ -130,8 +130,8 @@ load() {
   {
     "home.gamer.com.tw/artwork.php": {
       "image-selector": ";gl.$$('img.gallery-image, .reply-box article img, .image-setting img', root).filter(e=>!/https:.*.bahamut.com.tw.(editor.emotion|icon_videoplayer)/.test(e.src))",
-      "hook-download-pre": "gl.$('#reply_expand')?.click()",
-      "hook-lazy-load": null,
+      "hook-download-pre": "gl.$$('#reply_expand, .view-all-btn').forEach(e => e.click())",
+      "hook-lazy-load": undefined,
       "hook-info": "const a=gl.$('.article-content.title a.caption-text',root);if(a){const js=a.getAttribute('onclick');const parm=js.match(/^.*\\((.*)\\).*$/)[1];const l=JSON.parse(`[${parm.replace(/'/g,'\"')}]`);[info.author,info.folder]=l}",
       "action": {
         "next": "gl.$$('[data-button=changePage]').slice(-1)[0].click()"

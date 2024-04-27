@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bookmarklet Editor by gholk</title>
+<meta name="description" content="
+bookmarklet editor copy from https://codepen.io/amitind/pen/pQVwQp ,
+with syntax highlight feature. the origin author is amitind.">
+
+<style>
+* { box-sizing: border-box; }
+body {
+    display: flex;
+    flex-flow: column nowrap;
+    height: 100vh;
+    margin: 0;
+    padding: .5em;
+    font-family: Georgia, sans-serif;
+}
+
+.CodeMirror {
+    flex: 1 1 auto;
+    border: 1px solid gainsboro;
+    margin: 1em 0;
+    height: auto !important;
+    min-height: 200px;
+}
+.CodeMirror-scroll {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+form label + label {
+  margin-left: 0.5em;
+}
+</style>
+</head>
+<body>
+<h1>Bookmarklet Editor</h1>
+
+<label>
+    <span>Title</span>
+    <input id="title" value="My bookmarklet" />
+</label>
+
+<form action="https://emojipedia.org/search" target="emoji_blank">
+    <button type="submit">search emoji</button>
+    <input type="search" name="q" value="flag taiwan">
+</form>
+
+<textarea form="bookmarklet" id="script" name="script"></textarea>
+
+<script class="bookmarklet-banner">/****
+# bookmarklet name
+...
+
+## usage
+...
+
+****/
+
+</script>
+
+<script class="helper">
+    "use strict";
+    let $d = document;
+    let $w = window;
+    let $body = $d.body;
+    let run = f => f();
+    let $id = new Proxy($d, {
+        get(root, id) {
+            let e = $(`#${id}`);
+            if (!e) e = $(`[name=${id}]`);
+            return e;
+        }
+    });
+    function $all(q, root = $d) {
+        return Array.from(root.querySelectorAll(q));
+    }
+    function $(q, root = $d) {
+        return root.querySelector(q);
+    }
+    function $text(q, regexp, root = $d) {
+        return $all(q, root).filter(e => regexp.test(e.textContent));
+    }
+    function $create(tag, parent) {
+        const elm = $d.createElement(tag);
+        if (parent) parent.appendChild(elm);
+        return elm;
+    }
+    function addScripts(srcs, callback) {
+        if (srcs.length === 0) {
+            callback();
+        } else {
+            var script = $create("script", $d.body), src = srcs[0];
+            script.onload = () => addScripts(srcs.slice(1), callback);
+            script.src = src;
+        }
+    }
+    function addCSS(href) {
+        if (/\s\{/.test(href)) {
+            let e = $create("style", $body);
+            e.textContent = href;
+        } else {
+            var css = $create("link", $d.head);
+            css.rel = "stylesheet";
+            css.href = href;
+        }
+    }
+</script>
+
+<form id="bookmarklet" action="javascript:void 0">
+<div>
+    <button id="run" title="[ctrl-enter]">run</button>
+    <button id="download">download script</button>
+    <button id="create" title="[ctrl-s]">create bookmarklet</button>
+	<button id="copy">copy code</button>
+	<button onclick="prettifyHandler()">prettify</button>
+	<button onclick="splitCodeHandler()"
+		title="split long bookmarklet into multiple ones to by pass bookmarklet length limit; click them in sequencely to execute."
+	>split bookmarklet</button>
+	<a href="bookmarklet-editor-gholk-embed.html" download="bookmarklet-editor-gholk.html">
+		download this editor</a>
+	<br>
+    <label><input id="open" type="file">open file</label>
+	<br>
+    <label><input name="compress" type="checkbox">compress code</label>
+    <label><input name="wrap" type="checkbox">wrap script in function</label>
+    <label><input name="mangle" type="checkbox">mangle function name</label>
+	<label>length limit:
+		<input name="bookmarklet-url-length-limit"
+			type="number" value="1916" 
+			list="bookmarklet-url-length-limit-complete" />
+		<datalist id="bookmarklet-url-length-limit-complete">
+                  <!-- limit from try-and-error. only apply to edge-ie mode.
+                       not edge and not ie. no reference found. -->
+		  <option value="1916">1916 (Edge IE Mode)</option>
+		  <option value="4631">4631 (IE)</option>
+		  <!--option value="Opera"></option>
+		  <option value="Safari"></option>
+		  <option value="Microsoft Edge"></option-->
+		</datalist>
+	</label>
+</div>
+</form>
+
+<div id="output"></div>
+
+<textarea form="bookmarklet" id="uglify-result"></textarea>
+
+<script>
+var codeMirror = null
+window.addEventListener('load', function () {
+    const _title  = document.querySelector('#title'),
+          _script = document.querySelector('#script'),
+          _run = document.querySelector('#run'),
+          _download = document.querySelector('#download'),
+          _create = document.querySelector('#create'),
+          _output = document.querySelector('#output');
+    const _cm = codeMirror = CodeMirror.fromTextArea(_script, {
+              extraKeys: {
+                  'Ctrl-Enter': runCode,
+                  'Ctrl-S': minifyAndMakeBookmarklet
+              }
+          });
+    
+    function appendElement(parent, tag) {
+        return parent.appendChild(document.createElement(tag));
+    }
+    function getTitle() {
+        return _title.value || 'My bookmark';
+    }
+    function getScript() {
+        return _cm.getValue();
+    }
+
+    _cm.on('change', e => {
+        localStorage.bookmarklet_wip = getScript();
+    });
+
+    if (!_cm.getValue().trim()) {
+		_cm.setValue(
+                    $('script.bookmarklet-banner').textContent +
+			'void function () {' +
+			$('script.helper').textContent +
+			'}()'
+		)
+	}
+
+    function minifyJS(script, callback) {
+        //http://stackoverflow.com/questions/7119874/online-js-css-html-minifier
+        //https://developers.google.com/closure/compiler/docs/api-ref?csw=1
+        const url = 'https://closure-compiler.appspot.com/compile',
+              payload = [
+                  ['js_code', script],
+                  //http://stackoverflow.com/questions/25382082/closure-compiler-restful-api-output-info-parameter
+                  ['output_info', 'errors'],
+                  ['output_info', 'compiled_code'],
+                  ['output_format', 'json'],
+              ];
+
+        //Uses "content-type:multipart/form-data", which isn't supported by cc..
+        //http://stackoverflow.com/questions/8975758/google-closure-compiler-and-multipart-form-data-not-working
+        //http://stackoverflow.com/questions/4649850/google-closure-compiler-problem-with-programmatic-access
+        //
+        //	var data = new FormData();
+        //	data.append('js_code', script);
+        //	data.append('output_info', 'compiled_code');
+
+        //http://stackoverflow.com/questions/35325370/how-to-post-a-x-www-form-urlencoded-request-from-react-native
+        //http://stackoverflow.com/a/37562814/1869660
+        const data = payload.map(([key, val]) => encodeURIComponent(key) +'='+ encodeURIComponent(val))
+                            .join('&');
+
+        const config = {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: data,
+            method: "POST",
+        };
+        fetch(url, config)
+            .then(resp => resp.json())
+            .then(callback);
+    }
+    
+    _run.onclick = runCode
+    function runCode() {
+        try {
+            eval(getScript());
+        }
+        catch(ex) {
+            appendElement(_output, 'pre').textContent =
+                //http://stackoverflow.com/questions/18391212/is-it-not-possible-to-stringify-an-error-using-json-stringify
+                JSON.stringify(ex, Object.getOwnPropertyNames(ex), 4);
+        }
+    }
+    _download.onclick = e => {
+        //http://stackoverflow.com/questions/3665115/create-a-file-in-memory-for-user-to-download-not-through-server
+        var element = appendElement(document.body, 'a'),
+            filename = getTitle().replace(/\W/g, '-').toLowerCase() + '.js';
+        element.style.display = 'none';
+        //Doesn't work in IE..
+        //http://stackoverflow.com/a/20194533/1869660
+        //  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(getScript()));
+        //  element.setAttribute('download', filename);
+        const blob = new Blob([getScript()], {type: 'application/javascript'});
+        element.href = window.URL.createObjectURL(blob);
+        element.download = filename;
+
+        element.click();
+        document.body.removeChild(element);
+        sleep(2).then(() => URL.revokeObjectURL(blob));
+    };
+	
+	{
+		const e = $('a[download]')
+		e.href = window.location.pathname
+		const p = window.location.pathname.split('/')
+		let f = p[p.length-1] || p[p.length-2]
+		if (f) e.download = f
+	}
+})
+
+function sleep(second) {
+	return new Promise(wake => setTimeout(wake, second*1000))
+}
+
+function minifyWithUglifyJS(dict, callback) {
+  const {script, mangle, compress} = dict
+  const data = UglifyJS.minify(script, {mangle, compress})
+  callback(data)
+}
+
+function formIdToOption(id, booleanName) {
+	const fd = new FormData($id[id])
+	const option = Object.fromEntries(fd.entries())
+	booleanName.forEach(name => {
+		const v = option[name]
+		option[name] = (v == 'on') ? true : false
+	})
+	return option
+}
+
+$id.create.onclick = e => {
+	minifyAndMakeBookmarklet()
+	urlLenghWarn()
+}
+function minifyAndMakeBookmarklet() {
+	const title = $id.title.value,
+		  script = codeMirror.getValue();
+	if(!script.trim()) { return; }
+	
+	var _output = $id.output
+	$id.output.textContent = '';
+	$id.create.disabled = true;
+    $id.script.textContent = script
+	const option = formIdToOption('bookmarklet', 'wrap mangle compress'.split(' '))
+	option.script = script
+	minifyWithUglifyJS(option, data => {
+		//console.log(data);
+		$id.create.disabled = false;
+		
+		if(data.error) {
+			$create('pre', $id.output).textContent = data.error
+			return;
+		}
+		let code = data.code
+		if (option.wrap) code = 'void function() {' + code + '}()\n'
+		const link = $create('a', _output);
+		link.href = 'javascript:' + code;
+		link.textContent = title;
+		const ta = document.getElementById('uglify-result')
+		ta.value = ta.textContent = code
+	});
+}
+function urlLenghWarn(a = $('#output a')) {
+	var limit = Number($id['bookmarklet-url-length-limit'].value)
+	if (a.href.length > limit) {
+		alert(`bookmarklet length > ${limit}, may not work in some browsers`)
+	}
+}
+document.getElementById('open').oninput = function () {
+    const file = this.files[0]
+    if (!file) return
+    fileToText(file).then(text => codeMirror.setValue(text))
+  
+    async function fileToText(file) {
+        return new Promise((ok, error) => {
+            const reader = new FileReader()
+            reader.onload = event => ok(event.target.result)
+            reader.onerror = event => error(event)
+       	    reader.readAsText(file)
+        })
+    }
+}
+document.getElementById('copy').onclick = function () {
+	const s = this.form.elements['uglify-result']
+	navigator.clipboard.writeText(s.value)
+}
+
+function log(s) {
+  console.log(s)
+}
+
+function prettifyHandler() {
+	var script = codeMirror.getValue()
+	script = UglifyJS.minify(script, {
+		output: {
+			beautify: true,
+			/* semicolons: false, */
+			comments: true
+		},
+		mangle: false,
+		compress:false
+	}).code
+	codeMirror.setValue(script)
+}
+
+function splitCode(code, limit) {
+  var bufs = []
+  var buf = code
+  buf = urlEncode(buf)
+  buf = buf.replace(/['\\]/g, '\\$&')
+  var name = '_GH_BMLET8964'
+  var holder = '$code'
+  var template = [
+    `var ${name}='$code'`,
+    `void(${name}+='$code')`,
+    `void(location.href=${name});${name}=void 0`
+  ]
+  var chunk
+  chunk = format(template[0])
+  bufs.push(chunk)
+  while (buf.length > 0) {
+    chunk = format(template[1])
+    bufs.push(chunk)
+  }
+  chunk += `;${template[2]}`
+  if (chunk.length <= limit) bufs[bufs.length-1] = chunk
+  else bufs.push(template[2])
+  
+  return bufs.map((c,i) => {
+    var a = $create('a')
+    a.href = 'javascript:' + c
+    var t = `${i+1}-`
+    if (i == bufs.length-1) t = String(i+1)
+    a.textContent = t
+	return a
+  })
+  
+  function urlEncode(u) {
+    // edge will encode `'` in query string (after `?`) so encode all `?`
+    return u.replace(/[^\u0000-\u007F]+|[%?]/g, encodeURIComponent)
+  }
+  function urlEncodeLegal(s) {
+    let result = null
+	try { result = decodeURIComponent(s) }
+	catch (err) { result = null }
+	return typeof result == 'string'
+  }
+  function urlEncodeSplit(s, before) {
+    let i = before
+	if (s.length < i) return [s, '']
+	while (i>0) {
+	  let head = s.slice(0, i)
+	  if (urlEncodeLegal(head)) {
+	    log(`split at ${i} <= ${before}`)
+		return [head, s.slice(i)]
+	  }
+	  i--
+	}
+	throw new Error('split fail')
+  }
+  function format(tp) {
+    var tpl = tp.length - holder.length
+    var codel = limit - tpl
+	var pair = urlEncodeSplit(buf, codel)
+    var code = tp.replace('$code', pair[0])
+    buf = pair[1]
+    return code
+  }
+}
+function splitCodeHandler() {
+	minifyAndMakeBookmarklet()
+	var code = $id['uglify-result'].value
+	var limit = Number($id['bookmarklet-url-length-limit'].value)-16
+	var al = splitCode(code, limit)
+	var output = $('#output')
+	$all('a', output).forEach(a => a.remove())
+	al.forEach((a, i) => {
+		output.appendChild(a)
+		const t = $('#title').value
+		if (i==0) a.textContent = t + ' ' + a.textContent
+		else a.textContent = t.charAt(0) + '-' + a.textContent
+		output.appendChild($d.createTextNode(' '))
+	})
+}
+</script>
+
+<link rel="stylesheet" data-origin-url="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.24.2/codemirror.min.css" href="vendor/code-mirror.min.css">
+
+<script data-origin-src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.24.2/codemirror.min.js" src="vendor/code-mirror.min.js"></script>
+
+<script data-origin-src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.24.2/mode/javascript/javascript.min.js" src="vendor/code-mirror-javascript.min.js"></script>
+
+<script data-origin-command="uglifyjs --self &gt; uglifyjs.min.js" src="vendor/uglify-js.min.js"></script>
+
+</body></html>
