@@ -129,7 +129,9 @@ form label + label {
     <label><input name="compress" type="checkbox">compress code</label>
     <label><input name="wrap" type="checkbox">wrap script in function</label>
     <label><input name="mangle" type="checkbox">mangle function name</label>
-    <label><input name="multi-feature" type="checkbox">multi feature</label>
+    <label title="add `//== bookmarklet multi-feature ==//` and exports.m1 exports.m2 after it at end of code. if multi-feature is checked and click the `split code`, the result bookmarklet will run m1 m2... after the first click. the number of mN must equal to the number of split results."
+           ><input name="multi-feature" type="checkbox"
+                  >multi feature</label>
 	<label>length limit:
 		<input name="bookmarklet-url-length-limit"
 			type="number" value="1916" 
@@ -464,14 +466,14 @@ form label + label {
           // ie need a space between `javascript:` and first var
           `var ${c.name};if(typeof ${c.name}=='undefined')${c.name}='javascript: $code';else{$run};void 0`,
           `if(typeof ${c.name}=='string')${c.name}+='$code';else{$run};void 0`,
-          `if(typeof ${c.name}=='string'){${c.name}+='$code';eval(${c.name});${c.name}=null};else{$run};void 0`
+          `if(typeof ${c.name}=='string'){${c.name}+='$code';eval(${c.name});${c.name}=null}else{$run};void 0`
       ]
       var tempO
-      var source
+      var code
       if (option['multi-feature']) {
-          source = codeMirror.getValue()
+          const source = codeMirror.getValue()
           const res = splitMultiFeature(source)
-          codeMirror.setValue(res.body)
+          code = minifyAndMakeBookmarklet(res.body).code
           const f = res.feature
           const rep = template.splice(1, 1)[0]
           while (template.length < f.length) template.splice(1, 0, rep)
@@ -489,7 +491,7 @@ form label + label {
       }
 
       minifyAndMakeBookmarklet()
-      var code = $id['uglify-result'].value
+      if (!code) code = $id['uglify-result'].value
 
       var al = splitCode(code, limit, {template: tempO})
       var output = $('#output')
@@ -501,7 +503,6 @@ form label + label {
           else a.textContent = t.charAt(0) + '-' + a.textContent
           output.appendChild($d.createTextNode(' '))
       })
-      if (source) codeMirror.setValue(source)
 
       function splitMultiFeature(code) {
           const re = new RegExp('^//== bookmarklet multi-feature ==//$', 'm')
@@ -514,7 +515,7 @@ form label + label {
               if (typeof c == 'function') {
                   c = String(c)
                   c = c.replace(/^.*?\{/, '').replace(/\}$/, '')
-                  minifyAndMakeBookmarklet(c, r => c=r)
+                  c = minifyAndMakeBookmarklet(c).code
               }
               return c
           })
