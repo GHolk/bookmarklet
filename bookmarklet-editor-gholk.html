@@ -129,6 +129,7 @@ form label + label {
     <label><input name="compress" type="checkbox">compress code</label>
     <label><input name="wrap" type="checkbox">wrap script in function</label>
     <label><input name="mangle" type="checkbox">mangle function name</label>
+    <label><input name="multi-feature" type="checkbox">multi feature</label>
 	<label>length limit:
 		<input name="bookmarklet-url-length-limit"
 			type="number" value="1916" 
@@ -271,7 +272,8 @@ function sleep(second) {
 function minifyWithUglifyJS(dict, callback) {
   const {script, mangle, compress} = dict
   const data = UglifyJS.minify(script, {mangle, compress})
-  callback(data)
+  if (callback) callback(data)
+  return data
 }
 
 function formIdToOption(id, booleanName) {
@@ -288,27 +290,29 @@ $id.create.onclick = e => {
 	minifyAndMakeBookmarklet()
 	urlLenghWarn()
 }
-function minifyAndMakeBookmarklet() {
-	const title = $id.title.value,
-		  script = codeMirror.getValue();
-	if(!script.trim()) { return; }
+function minifyAndMakeBookmarklet(c) {
+	const title = $id.title.value
+	let script = c
+	if (!script) {
+		script = codeMirror.getValue();
+		if (!script.trim()) return
+	}
 	
 	var _output = $id.output
-	$id.output.textContent = '';
-	$id.create.disabled = true;
-    $id.script.textContent = script
+	if (!c) {
+		$id.output.textContent = '';
+		$id.script.textContent = script
+	}
 	const option = formIdToOption('bookmarklet', 'wrap mangle compress'.split(' '))
 	option.script = script
-	minifyWithUglifyJS(option, data => {
-		//console.log(data);
-		$id.create.disabled = false;
-		
+	return minifyWithUglifyJS(option, data => {
 		if(data.error) {
 			$create('pre', $id.output).textContent = data.error
 			return;
 		}
 		let code = data.code
 		if (option.wrap) code = 'void function() {' + code + '}()\n'
+		if (c) return
 		const link = $create('a', _output);
 		link.href = 'javascript:' + code;
 		link.textContent = title;
@@ -359,28 +363,45 @@ function prettifyHandler() {
 	codeMirror.setValue(script)
 }
 
-function splitCode(code, limit) {
+function splitCode(code, limit, option) {
   var bufs = []
   var buf = code
   buf = urlEncode(buf)
   buf = buf.replace(/['\\]/g, '\\$&')
   var name = '_GH_BMLET8964'
   var holder = '$code'
-  var template = [
-    `var ${name}='$code'`,
-    `void(${name}+='$code')`,
-    `void(location.href=${name});${name}=void 0`
-  ]
-  var chunk
-  chunk = format(template[0])
-  bufs.push(chunk)
-  while (buf.length > 0) {
-    chunk = format(template[1])
-    bufs.push(chunk)
+
+  var template
+  if (option.template) template = option.template
+  else template = {
+	list: [
+		`var ${name}='javascript:$code'`,
+		`void(${name}+='$code')`,
+		`location.href=${name};${name}=void 0`
+	],
+	get(i) {
+		if (i > 0) return this.list[1]
+		return this.list[0]
+	},
+	get tail() {
+		return this.list[2]
+	}
   }
-  chunk += `;${template[2]}`
-  if (chunk.length <= limit) bufs[bufs.length-1] = chunk
-  else bufs.push(template[2])
+  var i = 0
+  var chunk
+  chunk = format(template.get(i))
+  bufs.push(chunk)
+  i++
+  while (buf.length > 0) {
+    chunk = format(template.get(i))
+    bufs.push(chunk)
+	i++
+  }
+  if (template.tail) {
+	  chunk += `;${template.tail}`
+	  if (chunk.length <= limit) bufs[bufs.length-1] = chunk
+	  else bufs.push(template.tail)
+  }
   
   return bufs.map((c,i) => {
     var a = $create('a')
@@ -401,14 +422,26 @@ function splitCode(code, limit) {
 	catch (err) { result = null }
 	return typeof result == 'string'
   }
+  function splitIsLegal(s, i) {
+    const [a,b] = [s.slice(0,i), s.slice(i)]
+	let s2
+	try {
+		s2 = decodeURIComponent(a) + decodeURIComponent(b)
+	}
+	catch (err) {
+		s2 = null
+	}
+	if (s2 == decodeURIComponent(s)) return [a,b]
+	return null
+  }
   function urlEncodeSplit(s, before) {
     let i = before
 	if (s.length < i) return [s, '']
 	while (i>0) {
-	  let head = s.slice(0, i)
-	  if (urlEncodeLegal(head)) {
+	  let r = splitIsLegal(s, i)
+	  if (r) {
 	    log(`split at ${i} <= ${before}`)
-		return [head, s.slice(i)]
+		return r
 	  }
 	  i--
 	}
@@ -424,10 +457,41 @@ function splitCode(code, limit) {
   }
 }
 function splitCodeHandler() {
+	var limit = Number($id['bookmarklet-url-length-limit'].value)-16
+	var option = formIdToOption('bookmarklet', 'wrap mangle compress multi-feature'.split(' '))
+	var c = {name: '_GH_BMLET8964'}
+	var template = [
+		// ie need a space between `javascript:` and first var
+		`var ${c.name};if(typeof ${c.name}=='undefined')${c.name}='javascript: $code';else{$run};void 0`,
+		`if(typeof ${c.name}=='string')${c.name}+='$code';else{$run};void 0`,
+		`if(typeof ${c.name}=='string'){${c.name}+='$code';eval(${c.name});${c.name}=null};else{$run};void 0`
+	]
+	var tempO
+	var source
+	if (option['multi-feature']) {
+		source = codeMirror.getValue()
+		const res = splitMultiFeature(source)
+		codeMirror.setValue(res.body)
+		const f = res.feature
+		const rep = template.splice(1, 1)[0]
+		while (template.length < f.length) template.splice(1, 0, rep)
+		f.forEach((c,i) => {
+			template[i] = template[i].replace('$run', c)
+		})
+		tempO = {
+			list: template,
+			get(i) {
+				log(`get tempO.${i}`)
+				return this.list[i]
+			},
+			tail: null
+		}
+	}
+
 	minifyAndMakeBookmarklet()
 	var code = $id['uglify-result'].value
-	var limit = Number($id['bookmarklet-url-length-limit'].value)-16
-	var al = splitCode(code, limit)
+
+	var al = splitCode(code, limit, {template: tempO})
 	var output = $('#output')
 	$all('a', output).forEach(a => a.remove())
 	al.forEach((a, i) => {
@@ -437,6 +501,25 @@ function splitCodeHandler() {
 		else a.textContent = t.charAt(0) + '-' + a.textContent
 		output.appendChild($d.createTextNode(' '))
 	})
+	if (source) codeMirror.setValue(source)
+
+	function splitMultiFeature(code) {
+		const re = new RegExp('^//== bookmarklet multi-feature ==//$', 'm')
+		const frag = code.split(re)
+		const body = frag[0]
+		const exp = {}
+		new Function('exports', frag[1])(exp)
+		const feat = Object.keys(exp).sort().map(k => {
+			let c = exp[k]
+			if (typeof c == 'function') {
+				c = String(c)
+				c = c.replace(/^.*?\{/, '').replace(/\}$/, '')
+				minifyAndMakeBookmarklet(c, r => c=r)
+			}
+			return c
+		})
+		return {body, feature: feat}
+	}
 }
 </script>
 
