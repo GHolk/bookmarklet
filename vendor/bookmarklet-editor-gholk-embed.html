@@ -369,9 +369,9 @@ form label + label {
       if (option.template) template = option.template
       else template = {
           list: [
-              `var ${name}='javascript:$code'`,
+              `var ${name}='$code'`,
               `void(${name}+='$code')`,
-              `location.href=${name};${name}=void 0`
+              `eval(${name});${name}=void 0`
           ],
           get(i) {
               if (i > 0) return this.list[1]
@@ -455,8 +455,7 @@ form label + label {
       var option = formIdToOption('bookmarklet', 'wrap mangle compress multi-feature'.split(' '))
       var c = {name: '_GH_BMLET8964'}
       var template = [
-          // ie need a space between `javascript:` and first var
-          `var ${c.name};if(typeof ${c.name}=='undefined')${c.name}='javascript: $code';else{$run};void 0`,
+          `var ${c.name};if(typeof ${c.name}=='undefined')${c.name}='$code';else{$run};void 0`,
           `if(typeof ${c.name}=='string')${c.name}+='$code';else{$run};void 0`,
           `if(typeof ${c.name}=='string'){${c.name}+='$code';eval(${c.name});${c.name}=null}else{$run};void 0`
       ]
