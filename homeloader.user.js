@@ -8,6 +8,7 @@
 // @grant GM_download
 // @grant GM_getValue
 // @grant GM_setValue
+// @grant GM_webextSendMessage
 // ==/UserScript==
 
 class GholkLib {
@@ -374,3 +375,34 @@ async function markDownload(url, o) {
 }
 
 addBox()
+
+function savez() {
+    const c = config.current
+    const root = document.documentElement
+    {
+        const e = c["hook-lazy-load"]
+        if (e) eval(e)
+        else gl.$$('img[data-src]').forEach(e => {
+            if (!e.src) e.src = e.dataset.src
+        })
+    }
+    eval(c['hook-download-pre'] || 'true')
+    let img
+    {
+        const e = c['image-selector']
+        if (e.charAt(0) == ';') img = eval(e)
+        else img = gl.$$(e)
+    }
+    gl.$$('img').forEach(p => {
+        if (img.indexOf(p) == -1) p.remove()
+    })
+    GM_webextSendMessage('{e4db92bc-3213-493d-bd9e-5ff2afc72da6}', 'save-page')
+}
+
+function markDownloadSavez() {
+    markDownload(window.location.href, {
+        type: 'single-file',
+        file: true
+    })
+    gl.$('#gholk-homeloader-toolbox').classList.add('download-already')
+}
