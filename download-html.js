@@ -11,15 +11,39 @@ function cleanCopy(root) {
     const copy = root.cloneNode(deep)
     copy.querySelectorAll('iframe[src ^= moz-extension')
         .forEach(e => e.remove())
-    fixRelativeUrl(copy)
+    var o = {}
+    if (typeof option != undefined && option && option != window.option) {
+        o = option
+    }
+    if (!o['base-url-no']) fixRelativeUrl(copy)
+    if (!o['script-keep']) disableScript(copy)
+    fixEncode(copy)
     return copy
+}
+function disableScript(root) {
+    const scriptList = root.querySelectorAll("script")
+    for (const s of scriptList) {
+        if (s.src) {
+            const url = s.getAttribute("src")
+            s.removeAttribute("src")
+            s.dataset.gholkOriginalSrc = url
+        }
+        if (s.innerHTML) {
+            const code = s.innerHTML
+            s.innerHTML = ""
+            s.dataset.gholkOriginalCode = "code-in-next-comment"
+            const comment = document.createComment("")
+            comment.data = code.replace(/&/g, "&amp;").replace(/-->/g, "&m2arr;")
+            s.after(comment)
+        }
+    }
 }
 function fixEncode(root) {
     if (document.characterSet == 'UTF-8') return
     const list = root.querySelectorAll(
         'meta[http-equiv=content-type],' +
-        'meta[http-equiv=Content-Type],' +
-        'meta[charset]'
+            'meta[http-equiv=Content-Type],' +
+            'meta[charset]'
     )
     if (list.length == 0) {
         if (!confirm('not UTF-8 and no charset tag found, add one?')) return
@@ -46,12 +70,19 @@ function fixEncode(root) {
     }
 }
 function fixRelativeUrl(root) {
+    const option = root.querySelector('meta[property="gholk:base"][content=nop]')
+    if (option) {
+        option.remove()
+        return
+    }
     let base = root.querySelector('base')
     if (base) {
+        // base.href could be relative url. set it to absolute url.
         const relative = base.getAttribute('href')
         base.dataset.gholkOriginalHref = relative
         base.setAttribute('href', base.href)
     }
+    else if (window.location.protocol == 'data:') true
     else {
         base = document.createElement('base')
         base.href = root.baseURI

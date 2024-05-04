@@ -8,23 +8,53 @@ function $$(selector, context) {
     return (context || d).querySelectorAll(selector)
 }
 
-function create(tag, parent) {
+function create(tag, parent, prop) {
     const elm = (parent || b).appendChild( d.createElement(tag) );
+    if (tag == 'BUTTON') elm.type = 'button'
+    if (prop) Object.assign(elm, prop)
     return elm;
+}
+function createWithLabel(text, attr) {
+    const l = create('label')
+    const inp = create('input', l, attr)
+    if (inp.title) {
+        l.title = inp.title
+        inp.title = ''
+    }
+    l.appendChild(document.createTextNode(text))
+    return l
 }
 
 async function promptUi(title, text = '') {
-    const dialog = document.createElement('div') // use <dialog> ?
+    const dialog = document.createElement('form', null, {
+        method: 'dialog'
+    })
     dialog.className = 'gholk-prompt-dialog'
     const titleNode = create('h2', dialog)
     titleNode.textContent = title
-    const textarea = create('textarea', dialog)
-    textarea.value = text
-    const docTitle = create('input', dialog)
-    docTitle.type = 'text'
-    docTitle.value = document.title
+    const textarea = create('textarea', dialog, {
+        name: 'annotate',
+        value: text
+    })
+    const docTitle = create('input', dialog, {
+        name: 'title',
+        type: 'text',
+        value: document.title
+    })
     const editable = createContentEditableCheckBox()
     dialog.appendChild(editable)
+    dialog.appendChild(createWithLabel('do not comment out script', {
+        type: 'checkbox',
+        checked: false,
+        name: 'script-keep',
+        title: 'not to comment out script tag'
+    }))
+    dialog.appendChild(createWithLabel('do not set base url', {
+        type: 'checkbox',
+        checked: false,
+        name: 'base-url-no',
+        title: 'not to add <base> in download html'
+    }))
     const ok = create('button', dialog)
     ok.textContent = 'ok'
     let confirm
@@ -36,8 +66,12 @@ async function promptUi(title, text = '') {
     cancel.onclick = () => reject()
     const download = create('button', dialog)
     download.onclick = () => {
+        create('input', dialog, {
+            type: 'hidden',
+            name: 'download',
+            value: 'on',
+        })
         confirm()
-        setTimeout(downloadHtml, 200)
     }
     download.textContent = 'download'
     // confirm when ctrl-enter
@@ -101,7 +135,9 @@ async function promptUi(title, text = '') {
     finally {
         dialog.remove()
     }
-    return {annotate: textarea.value, title: docTitle.value}
+    const fd = new FormData(dialog)
+    const fdo = Object.fromEntries(fd.entries())
+    return fdo
     
     function createContentEditableCheckBox() {
         const field = d.createElement('label')
@@ -151,6 +187,7 @@ async function editDescription() {
         appendAfter(annotate, first)
         const urlTag = createUrlTag()
         if (urlTag) appendAfter(urlTag, first)
+        if (result.download) downloadHtml(result)
     }
 }
 function createUrlTag(url = window.location.href) {
@@ -212,7 +249,7 @@ function enableDragMove(container, handle) {
 
 // :r download-html.js
 // (execute-kbd-macro [?0 ?j ?j ?j ?d ?i ?\{ ?k ?: ?r ?  ?d ?o ?w ?n ?l ?o ?a ?d ?- ?h ?t ?m ?l ?. ?j ?s return ])
-function downloadHtml() {
+function downloadHtml(option) {
     function doctypeToString(node = document.doctype) {
         if (!node) return ''
         return '<!DOCTYPE ' + node.name
@@ -226,8 +263,12 @@ function downloadHtml() {
         const copy = root.cloneNode(deep)
         copy.querySelectorAll('iframe[src ^= moz-extension')
             .forEach(e => e.remove())
-        fixRelativeUrl(copy)
-        disableScript(copy)
+        var o = {}
+        if (typeof option != undefined && option && option != window.option) {
+            o = option
+        }
+        if (!o['base-url-no']) fixRelativeUrl(copy)
+        if (!o['script-keep']) disableScript(copy)
         fixEncode(copy)
         return copy
     }
@@ -253,8 +294,8 @@ function downloadHtml() {
         if (document.characterSet == 'UTF-8') return
         const list = root.querySelectorAll(
             'meta[http-equiv=content-type],' +
-            'meta[http-equiv=Content-Type],' +
-            'meta[charset]'
+                'meta[http-equiv=Content-Type],' +
+                'meta[charset]'
         )
         if (list.length == 0) {
             if (!confirm('not UTF-8 and no charset tag found, add one?')) return
@@ -293,7 +334,8 @@ function downloadHtml() {
             base.dataset.gholkOriginalHref = relative
             base.setAttribute('href', base.href)
         }
-        else if (window.location.protocol != 'data:') {
+        else if (window.location.protocol == 'data:') true
+        else {
             base = document.createElement('base')
             base.href = root.baseURI
             base.dataset.gholkOriginalHref = ''
