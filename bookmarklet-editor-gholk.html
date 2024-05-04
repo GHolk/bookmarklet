@@ -85,9 +85,10 @@ form label + label {
     function $text(q, regexp, root = $d) {
         return $all(q, root).filter(e => regexp.test(e.textContent));
     }
-    function $create(tag, parent) {
+    function $create(tag, parent, attr) {
         const elm = $d.createElement(tag);
         if (parent) parent.appendChild(elm);
+        if (attr) Object.assign(elm, attr);
         return elm;
     }
     function addScripts(srcs, callback) {
