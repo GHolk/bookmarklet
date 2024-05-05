@@ -26,10 +26,10 @@ function createWithLabel(text, attr) {
 }
 
 async function promptUi(title, text = '') {
-    const dialog = document.createElement('form', null, {
-        method: 'dialog'
+    const dialog = create('form', null, {
+        method: 'dialog',
+        className: 'gholk-prompt-dialog'
     })
-    dialog.className = 'gholk-prompt-dialog'
     const titleNode = create('h2', dialog)
     titleNode.textContent = title
     const textarea = create('textarea', dialog, {
@@ -41,7 +41,13 @@ async function promptUi(title, text = '') {
         type: 'text',
         value: document.title
     })
-    const editable = createContentEditableCheckBox()
+    const editable = createWithLabel('content editable', {
+        type: 'checkbox',
+        name: 'content-editable-toggle',
+        onchange() {
+            d.body.contentEditable = this.checked
+        }
+    })
     dialog.appendChild(editable)
     dialog.appendChild(createWithLabel('do not comment out script', {
         type: 'checkbox',
@@ -136,17 +142,8 @@ async function promptUi(title, text = '') {
         dialog.remove()
     }
     const fd = new FormData(dialog)
-    const fdo = Object.fromEntries(fd.entries())
+    const fdo = Object.fromEntries(fd)
     return fdo
-    
-    function createContentEditableCheckBox() {
-        const field = d.createElement('label')
-        field.innerHTML = '<input type="checkbox" name="content-editable-toggle" /> content editable'
-        $('input', field).onchange = function () {
-            d.body.contentEditable = this.checked
-        }
-        return field
-    }
 }
 function appendAfter(newNode, refNode) {
     const parent = refNode.parentNode
