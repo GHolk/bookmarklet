@@ -168,24 +168,23 @@ function findDescription() {
 async function editDescription() {
     const description = findDescription()
     const result = await promptUi('description', description)
-    if (result) {
-        let annotate = $('meta[property="gholk:annotate"]')
-        if (!annotate) {
-            annotate = document.createElement('meta')
-            annotate.setAttribute('property', 'gholk:annotate')
-        }
-        annotate.content = result.annotate
-        // or just head.appendChild() ?
-        document.title = result.title
-        const first = $('meta[charset]') ||
-              $('meta[http-equiv = content-type]') ||
-              $('meta[http-equiv = Content-Type]') ||
-              d.head.firstChild || d.documentElement.firstChild
-        appendAfter(annotate, first)
-        const urlTag = createUrlTag()
-        if (urlTag) appendAfter(urlTag, first)
-        if (result.download) downloadHtml(result)
+    if (!result) return
+    let annotate = $('meta[property="gholk:annotate"]')
+    if (!annotate) {
+        annotate = document.createElement('meta')
+        annotate.setAttribute('property', 'gholk:annotate')
     }
+    annotate.content = result.annotate
+    // or just head.appendChild() ?
+    document.title = result.title
+    const first = $('meta[charset]') ||
+          $('meta[http-equiv = content-type]') ||
+          $('meta[http-equiv = Content-Type]') ||
+          d.head.firstChild || d.documentElement.firstChild
+    appendAfter(annotate, first)
+    const urlTag = createUrlTag()
+    if (urlTag) appendAfter(urlTag, first)
+    if (result.download) downloadHtml(result)
 }
 function createUrlTag(url = window.location.href) {
     if (url.slice(0, 5) == 'data:') {
