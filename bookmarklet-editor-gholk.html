@@ -122,6 +122,7 @@ form label + label {
 	<button onclick="splitCodeHandler()"
 		title="split long bookmarklet into multiple ones to by pass bookmarklet length limit; click them in sequencely to execute."
 	>split bookmarklet</button>
+	<button onclick="localScriptFileHandler()" title="download script and click this to create a bookmarklet to run a downloaded script.">create injector</button>
 	<a href="bookmarklet-editor-gholk-embed.html" download="bookmarklet-editor-gholk.html">
 		download this editor</a>
 	<br>
@@ -521,6 +522,39 @@ form label + label {
           })
           return {body, feature: feat}
       }
+  }
+  var localScriptFilePath = String.raw`D:\my-program\my-bookmarklet\ `.trim()
+  {
+      if (!navigator.userAgent.match(/windows/i)) {
+          localScriptFilePath = '/home/my-home/my-program/my-bookmarklet/'
+      }
+  }
+  function localScriptFileHandler() {
+	const title = $id.title.value
+	let p = localScriptFilePath + title + '.js'
+	p = prompt('where do you save the download script?', p)
+	if (!p) return
+	localScriptFilePath = p.replace(/[^\\\/]+$/, '')
+	function localScriptFileInject(path) {
+		const script = document.createElement('script')
+		script.src = path
+		script.onerror = evt => {
+			const e = evt.target
+			const srcl = e.getAttribute('src').replace(/^file:\/\//,'')
+			alert(`bookmarklet script not found: ${e.src}\n(${srcl})`)
+		}
+		document.body.appendChild(script)
+	}
+	let s = `void ${String(localScriptFileInject)} (${
+		JSON.stringify('file://' + p)
+	})`
+	s = minifyAndMakeBookmarklet(s).code
+	const out = $id.output
+	out.textContent = ''
+	$create('a', out, {
+		href: 'javascript:' + s + ';void 0',
+		textContent: title
+	})
   }
 </script>
 
