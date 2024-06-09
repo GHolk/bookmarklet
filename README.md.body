@@ -619,6 +619,9 @@ You have to add you mastodon instance url to this user style manually.
 ## [tg note]
 A basic html editor to compose rich text.
 Designed to store article snippets with [annotate](#prompt-annotate-description) .
+## [rename image](rename-image.html)
+an easy ui to preview and rename image.
+(generate the mv commands for bash)
 
 ## [wheel on input number]
 Make mouse wheel increase or decrease the number in text field.

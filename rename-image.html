@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; }
+body {
+    display: flex;
+    flex-flow: column nowrap;
+    height: 100vh;
+    margin: 0;
+    padding: .5em;
+    font-family: Georgia, sans-serif;
+}
+textarea {
+    width: 30%;
+    height: 85vh;
+}
+img {
+    display: block;
+    height: 85vh;
+    margin: 0 2em;
+    border: 1px solid;
+    object-fit: contain;
+    max-width: 70vw;
+}
+img:not([src]) {
+    width: 60%;
+}
+.content {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    flex-wrap: wrap;
+}
+</style>
+</head>
+<body>
+<h1>rename image</h1>
+<div>
+<button onclick="fne.copyMvCode()">copy</button>
+<button onclick="fne.loadLocalPath()">load path</button>
+<button onclick="fne.node.value = ''">clear</button>
+<input title="load-file" type="file" multiple accept="image/*"
+       oninput="fne.loadFileList(this.files)">
+</div>
+<div class="content">
+<textarea id="file-origin" hidden></textarea>
+<textarea id="file-rename"></textarea>
+<img id="file-preview">
+</div>
+
+<div>
+<h2 id="usage">usage</h2>
+<p>this tool let you rename image while previewing them.</p>
+<ol>
+<li>drop image files on webpage or select them with the file-picker.</li>
+<li>or copy the <em>absolute path</em> of images to the textarea,
+and click the <em>load path</em> button (or <code>Ctrl-o</code>).</li>
+<li>edit the filename in the textarea</li>
+<li>the right area will show the image which the cursor on.</li>
+<li><code>Enter</code> key will move cursor to the next image path,
+and <code>Shift-Enter</code> will move to the previous image.</li>
+<li><em>copy</em> button or <code>Ctrl-s</code> will copy the rename commands for the bash (posix shell)</li>
+<li>in the command, change <code>run=&quot;echo mv -v&quot;</code> to <code>run=&quot;mv -v&quot;</code> to actually rename the file.</li>
+</ol>
+</div>
+
+<script>
+  "use strict";
+  let $d = document;
+  let $w = window;
+  let $body = $d.body;
+  let run = f => f();
+  let $id = new Proxy($d, {
+      get(root, id) {
+          let e = $(`#${id}`);
+          if (!e) e = $(`[name=${id}]`);
+          return e;
+      }
+  });
+  function $all(q, root = $d) {
+      return Array.from(root.querySelectorAll(q));
+  }
+  function $(q, root = $d) {
+      return root.querySelector(q);
+  }
+  function $text(q, regexp, root = $d) {
+      return $all(q, root).filter(e => regexp.test(e.textContent));
+  }
+  function $create(tag, parent, attr) {
+      const elm = $d.createElement(tag);
+      if (parent) parent.appendChild(elm);
+      if (attr) Object.assign(elm, attr);
+      return elm;
+  }
+  function addScripts(srcs, callback) {
+      if (srcs.length === 0) {
+          callback();
+      } else {
+          var script = $create("script", $d.body), src = srcs[0];
+          script.onload = () => addScripts(srcs.slice(1), callback);
+          script.src = src;
+      }
+  }
+  function addCSS(href) {
+      if (/\s\{/.test(href)) {
+          let e = $create("style", $body);
+          e.textContent = href;
+      } else {
+          var css = $create("link", $d.head);
+          css.rel = "stylesheet";
+          css.href = href;
+      }
+  }
+  class FileNameEditor {
+      constructor() {
+          this._constructor(...arguments)
+      }
+      _constructor(node, source, image) {
+          this.fileList = []
+          this.node = node
+          this.source = source
+          this.image = image
+          this.skipSameName = true
+      }
+      get pos() {
+          return this.node.selectionStart
+      }
+      getCursor() {
+          const e = this.node
+          const t = e.value
+          let i = this.pos
+          let cy = 0
+          for (const line of t.split('\n')) {
+              if (i <= line.length) {
+                  break
+              }
+              i -= line.length + 1
+              cy += 1
+          }
+          return [cy, i]
+      }
+      getLineText(i) {
+          const l = this.node.value.split('\n')
+          return l[i]
+      }
+      goCursor(y, x) {
+          const e = this.node
+          const t = e.value
+          let i = 0
+          let y2 = 0
+          for (const line of t.split('\n')) {
+              if (y2 == y) break
+              i += line.length + 1
+              y2 += 1
+          }
+          i += x
+          this.node.setSelectionRange(i, i)
+      }
+      goNextFile() {
+          let i = this.getCursor()[0]
+          this.goCursor(i + 1, 0)
+          this.goBasenameEnd()
+      }
+      goPrevFile() {
+          let i = this.getCursor()[0]
+          this.goCursor(i - 1, 0)
+          this.goBasenameEnd()
+      }
+      goBasenameEnd() {
+          let i = this.getCursor()[0]
+          const t = this.getLineText(i)
+          const suf = this.getSuffix(t)
+          this.goCursor(i, t.length - suf.length - 1)
+          this.updateImage()
+      }
+      getSuffix(p) {
+          let f = p.replace(/^.*\//, '')
+          let suf = f.match(/\.\w+$/)
+          return suf[0].slice(1)
+      }
+      updateImage() {
+          if (this.fileList.length == 0) return
+          const i = this.getCursor()[0]
+          const u = this.fileList[i].getUrl()
+          if (this.image.src != u) this.image.src = u
+      }
+      allowDrop(e, f) {
+          if (e in this) e = this[e]
+          e.ondragover = e => e.preventDefault()
+          e.ondrop = f
+      }
+      copyMvCode() {
+          const f2 = this.node.value.split('\n')
+          let c = '( run="echo mv -v"; while read f1 && read f2; do $run "$f1" "$f2"; done ) <<EOF'
+
+          let fl = this.fileList
+              .map((f, i) => f.getPath() + '\n' + f2[i]).join('\n')
+          if (this.skipSameName) {
+              fl = fl.split('\n').filter((f, i, l) => {
+                  const j = (i % 2 == 0) ? i+1 : i-1
+                  return (f == l[j]) ? false : true
+              }).join('\n')
+          }
+          let fl2 = fl.replace(/[\\$]/g, c => '\\' + c)
+          if (fl != fl2) this.warn('file name contain `[$\\]` get escape')
+          c += '\n' + fl2 + '\n'
+          c += 'EOF'
+          navigator.clipboard.writeText(c)
+      }
+      warn(s) {
+          alert(s)
+      }
+      loadFileList(fileList) {
+          let fl = Array.from(fileList).map(b => false || {
+              blob: b,
+              url: null,
+              getUrl() {
+                  if (!this.url) this.url = URL.createObjectURL(this.blob)
+                  return this.url
+              },
+              getPath() {
+                  return this.blob.name
+              }
+          })
+          fl = this.fileList = this.fileList.concat(fl)
+          this.node.value = fl.map(f => f.getPath()).join('\n')
+          this.goCursor(0, 0)
+          this.goBasenameEnd()
+          this.updateImage()
+      }
+      loadLocalPath() {
+          const e = this.node
+          const t = e.value.replace(/\n+$/, '')
+          if (t != e.value) e.value = t
+          const l = t.split('\n').slice(this.fileList.length)
+          this.fileList = this.fileList.concat(l.map(f => false || {
+              path: f,
+              getUrl() {
+                  return 'file://' + this.path
+              },
+              getPath() {
+                  return this.path
+              }
+          }))
+          this.goCursor(0, 0)
+          this.goBasenameEnd()
+          this.updateImage()
+      }
+      async selectionChangeHandler() {
+          const t = this.selectionChangeLast = Date.now()
+          await sleep(0.3)
+          if (this.selectionChangeLast == t) this.updateImage()
+      }
+  }
+  function sleep(s) {
+      return new Promise(wake => setTimeout(wake, s*1000))
+  }
+  var fne = new FileNameEditor(
+      $id['file-rename'], $id['file-origin'], $id['file-preview']
+  )
+  fne.node.addEventListener('keydown', evt => {
+      const nop = () => evt.preventDefault()
+      if (evt.key == 'Enter') {
+          nop()
+          if (evt.shiftKey) fne.goPrevFile()
+          else fne.goNextFile()
+      }
+      if (evt.key == 'o' && evt.ctrlKey) {
+          nop()
+          fne.loadLocalPath()
+      }
+      if (evt.key == 's' && evt.ctrlKey) {
+          nop()
+          fne.copyMvCode()
+      }
+  })
+  fne.node.addEventListener('selectionchange', evt => {
+      fne.selectionChangeHandler()
+  }, {passive: true})
+  fne.allowDrop(document.body, function (evt) {
+      evt.preventDefault()
+      fne.loadFileList(evt.dataTransfer.files)
+  })
+</script>
+</body>
+</html>
