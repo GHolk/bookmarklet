@@ -297,10 +297,8 @@ form label + label {
   function minifyAndMakeBookmarklet(c) {
       const title = $id.title.value
       let script = c
-      if (!script) {
-          script = codeMirror.getValue();
-          if (!script.trim()) return
-      }
+      if (!script) script = codeMirror.getValue();
+      if (!script.trim()) return
       
       var _output = $id.output
       if (!c) {

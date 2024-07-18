@@ -87,6 +87,7 @@ async function promptUi(title, text = '') {
             e.preventDefault()
             download.click()
         }
+        else if (e.key == 'z' && e.altKey) reject()
     })
     create('style', dialog).textContent = `
 .gholk-prompt-dialog {
@@ -101,33 +102,28 @@ async function promptUi(title, text = '') {
     border: solid 1px;
     opacity: 0.7;
 }
-.gholk-prompt-dialog h2 {
-    cursor: grab;
-}
-.gholk-prompt-dialog label {
-    display: block;
-}
-.gholk-prompt-dialog textarea {
+h2 {cursor: grab;}
+label {display: block;}
+button {margin: 0 0.2em;}
+textarea {
     display: block;
     width: 100%;
     height: 5em;
 }
-.gholk-prompt-dialog input:not([type]),
-.gholk-prompt-dialog input[type=text] {
+input:not([type]), input[type=text] {
     width: 100%;
 }
-.gholk-prompt-dialog.drag-preview {
+.drag-preview {
     border-width: 0.3em;
     opacity: 1;
 }
-.gholk-prompt-dialog.drag-source {
-    opacity: 0.7;
-}
+.drag-source {opacity: 0.7;}
 `
-    b.appendChild(dialog)
+    const sr = create('span', b, {className: dialog.className})
+    sr.attachShadow({mode: 'open'})
+    sr.shadowRoot.appendChild(dialog)
 
     enableDragMove(dialog, titleNode)
-    dialog.contentEditable = false
     // make dragging editable content to textarea no removing it from page
     dialog.ondrop = e => e.dataTransfer.dropEffect = 'copy'
 
@@ -139,7 +135,7 @@ async function promptUi(title, text = '') {
         return null
     }
     finally {
-        dialog.remove()
+        sr.remove()
     }
     const fd = new FormData(dialog)
     const fdo = Object.fromEntries(fd)
