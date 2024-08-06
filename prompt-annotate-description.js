@@ -90,6 +90,7 @@ async function promptUi(title, text = '') {
         else if (e.key == 'z' && e.altKey) reject()
     })
     create('style', dialog).textContent = `
+:host {all: initial;}
 .gholk-prompt-dialog {
     position: fixed;
     top: 30%;
