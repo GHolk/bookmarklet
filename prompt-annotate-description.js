@@ -28,7 +28,30 @@ function createWithLabel(text, attr) {
 async function promptUi(title, text = '') {
     const dialog = create('form', null, {
         method: 'dialog',
-        className: 'gholk-prompt-dialog'
+        className: 'gholk-prompt-dialog',
+        onselectionchange(evt) {
+            const sel = getTextBoxSelection()
+            if (!sel) return
+            const e = this
+            const ev2 = new Event('selectionchange', {
+                bubbles: true, composed: false
+            })
+            e.getRootNode().host.dispatchEvent(ev2)
+
+            function getTextBoxSelection() {
+                let e = document.activeElement
+                if (!e) return
+                while (e.shadowRoot) e = e.shadowRoot.activeElement
+
+                if (e.nodeName != 'TEXTAREA' && e.nodeName != 'INPUT') return
+                if (e.selectionStart == null) return
+                return {
+                    isCollapsed: e.selectionStart == e.selectionEnd,
+                    focusNode: e,
+                    type: 'TextBox'
+                }
+            }
+        }
     })
     const titleNode = create('h2', dialog)
     titleNode.textContent = title
@@ -99,7 +122,7 @@ async function promptUi(title, text = '') {
     height: auto;
     background: white;
     padding: 1em;
-    z-index: 9999;
+    z-index: 90;
     border: solid 1px;
     opacity: 0.7;
 }
@@ -121,6 +144,7 @@ input:not([type]), input[type=text] {
 .drag-source {opacity: 0.7;}
 `
     const sr = create('span', b, {className: dialog.className})
+    sr.setAttribute('role', 'textbox')
     sr.attachShadow({mode: 'open'})
     sr.shadowRoot.appendChild(dialog)
 
