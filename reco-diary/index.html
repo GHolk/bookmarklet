@@ -416,6 +416,8 @@ let $id = new Proxy({}, {
                   $all('.toc-set').forEach(e2 => e2 != e && (e2.checked = false))
                   this.playHeadLevelOnly =  o.level
                   if (o.play) {
+                      const now = $all('audio').find(x => !x.paused)
+                      if (now) return
                       const li = $all(`li[data-head-level]`)
                             .find(e => Number(e.dataset.headLevel) <= o.level)
                       if (!li) return
