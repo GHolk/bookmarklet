@@ -17,16 +17,29 @@ TODO
 * button clear play-toc
 * track button: insert append replace
 * duration
+* set datetime-local
+* date skip same part
 -->
     <style>
-        body {
+      #head-fix {
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-color);
             font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
             margin: 0;
-            background-color: #f4f4f9;
+            width: 100%;
+      }
+        body {
+            margin: 0;
+            height: 100vh;
+            --bg-color: #f4f4f9;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         #controls, #fileOps {
@@ -64,7 +77,6 @@ TODO
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            cursor: grab; /* 提示可拖曳 */
         }
 
         #recordingsList li {
@@ -91,6 +103,17 @@ TODO
         #recordingsList li.focus {
             background-color: lime;
         }
+        #recordingsList li .title + span {
+            display: none;
+        }
+        #recordingsList li.focus .title + span {
+            margin-left: 0.5em;
+            display: inline;
+        }
+        #recordingsList li .drag-handle {
+            color: gray;
+            cursor: grab; /* 提示可拖曳 */
+        }
 
         /* Sortable.js 拖曳時的樣式 */
         .sortable-ghost {
@@ -104,8 +127,7 @@ TODO
         }
 
         audio {
-            width: 35%;
-            min-width: 180px;
+            width: 180px;
         }
 
         .order-indicator {
@@ -124,6 +146,7 @@ TODO
 </head>
 <body>
 
+  <div id="head-fix">
     <h1>reco diary 錄音日記</h1>
 
     <div id="controls">
@@ -134,9 +157,9 @@ TODO
     </div>
 
     <div id="fileOps">
-        <button id="exportButton">💾 匯出所有錄音 (ZIP)</button>
+        <button id="exportButton">💾 export</button>
         <input type="file" id="importInput" accept=".zip">
-        <button id="importButton">📂 匯入 ZIP 檔案</button>
+        <button id="importButton">📂 import</button>
         <button onclick="recorder.deleteAll()">清空</button>
     </div>
     <div id="toolbar">
@@ -157,15 +180,17 @@ TODO
         lv3</label>
       <button onclick="recorder.pause()">pause</button>
       <button onclick="recorder.rangeMove({prompt:true})">range-mv</button>
+      <button onclick="recorder.titleSet({target:'focus'})">name</button>
       <!-- select onchange="recorder.rangeMove({event})">
         <option value="">range</option>
         <option>select</option>
         <option>move</option>
       </select-->
-    </div>
+        </div>
 
     <div id="status">閒置中...</div>
     <div id="recordingTimer">00:00</div>
+    </div>
 
     <h2>錄音列表 (可拖曳調整順序)</h2>
     <ul id="recordingsList">
@@ -249,7 +274,7 @@ let $id = new Proxy({}, {
       const db = new Dexie('AudioRecorderDB');
       db.version(1).stores({
           // 新增 order 索引，用於排序
-          recordings: '++id, order, timestamp, type'
+          recordings: '++id, order, timestamp, type, title'
       });
 
       // 獲取 DOM 元素
@@ -298,6 +323,7 @@ let $id = new Proxy({}, {
       // --- 3. 拖曳排序功能 (Sortable.js) ---
       function initSortable() {
           new Sortable(recordingsList, {
+              handle: '.drag-handle',
               animation: 150,
               ghostClass: 'sortable-ghost',
               onEnd: function (evt) {
@@ -360,6 +386,25 @@ let $id = new Proxy({}, {
               )
               this.recordFocus = Number(li.dataset.id)
               li.classList.add('focus')
+          },
+          recordFocusGet(id = this.recordFocus) {
+              return $(`#recordingsList li[data-id = "${id}"`)
+          },
+          async titleSet(o) {
+              if (o.target == 'focus') {
+                  const id = this.recordFocus
+                  const li = this.recordFocusGet(id)
+                  const te = $('.title', li)
+                  let t = 'new-title'
+                  if (te) t = te.textContent
+                  const t1 = prompt('new title', t)
+                  if (t1) {
+                      db.recordings.update(this.recordFocus, {
+                          title: t1
+                      })
+                      await loadRecordings()
+                  }
+              }
           },
           async rangeMove(o) {
               if (o.prompt) {
@@ -680,9 +725,18 @@ let $id = new Proxy({}, {
           const timeSpan = document.createElement('span');
           timeSpan.textContent = dateStr;
 
+
           // 將元素加入列表項 (順序 | 播放器 | 時間 | 下載 | 刪除)
+          $create('span', listItem, {
+              className: 'drag-handle',
+              textContent: '☰'
+          })
           listItem.appendChild(orderIndicator);
           listItem.appendChild(audio);
+          if (record.title) $create('span', listItem, {
+              className: 'title',
+              textContent: record.title
+          })
           listItem.appendChild(timeSpan);
           listItem.appendChild(downloadLink);
           listItem.appendChild(deleteButton);
@@ -726,33 +780,42 @@ let $id = new Proxy({}, {
               if (record.order == null) return
               const dateObj = new Date(record.timestamp);
               // 檔名包含 order，以便匯入時讀取
-              const filename = `rec-${record.order}-${dateObj.getFullYear()}-${dateObj.getMonth()+1}-${dateObj.getDate()}.webm`;
+              const filename = `rec-${record.order}-${record.timestamp}.webm`;
 
               // 將 Blob 加入到 ZIP 檔案
               zip.file(filename, record.audio);
 
               // 儲存 metadata (例如原始 timestamp 和 order)
-              metadata[filename] = {
-                  type: record.type,
-                  timestamp: record.timestamp,
-                  duration: record.duration,
-                  order: record.order
-              };
+              metadata[filename] = pickObjectProperty(
+                  record, 'type timestamp duration order title'.split(' ')
+              )
           });
 
           // 將 metadata 作為 JSON 檔案加入 ZIP
           zip.file("metadata.json", JSON.stringify(metadata));
 
+          let zipName = "reco-diary-save.zip"
+          {
+              const h = $('#recordingsList li[data-head-level = "1"] .title') ||
+                  $('#recordingsList li[data-head-level = "2"] .title')
+              if (h) zipName = `reco-diary-save-${h.textContent}.zip`
+          }
           // 生成 ZIP 檔案
-          zip.generateAsync({type:"blob"})
-              .then(function(content) {
-                  saveAs(content, "voice_recordings_ordered.zip");
-                  statusDiv.textContent = '閒置中... (匯出完成)';
-              })
-              .catch(error => {
-                  console.error("ZIP 檔案生成失敗:", error);
-                  statusDiv.textContent = '錯誤: ZIP 匯出失敗';
-              });
+          try {
+              const content = await zip.generateAsync({type:"blob"})
+              saveAs(content, zipName);
+              statusDiv.textContent = '閒置中... (匯出完成)';
+          }
+          catch (error) {
+              console.error("ZIP 檔案生成失敗:", error);
+              statusDiv.textContent = '錯誤: ZIP 匯出失敗';
+          }
+      }
+
+      function pickObjectProperty(o, ks) {
+          const o2 = {}
+          for (const k of ks) if (k in o) o2[k] = o[k]
+          return o2
       }
 
       // --- 10. 匯入 ZIP 檔案 (從 metadata.json 讀取順序) ---
@@ -791,11 +854,13 @@ let $id = new Proxy({}, {
                   // 新的 order 值，如果匯入的 ZIP 包含 metadata，則使用其順序。否則使用當前最大的 order 值 + 1
                   const importOrder = originalMeta.order
 
-                  recordsToImport.push({
-                      timestamp: originalMeta.timestamp || new Date().getTime(),
-                      order: importOrder,
-                      audio: audioBlob
-                  });
+                  const o = pickObjectProperty(
+                      originalMeta, 'timestamp duration type title'.split(' ')
+                  )
+                  if (!o.timestamp) o.timestamp = Date.now()
+                  o.order = importOrder
+                  o.audio = audioBlob
+                  recordsToImport.push(o);
               }
 
               // 3. 排序並批次儲存到 IndexedDB
