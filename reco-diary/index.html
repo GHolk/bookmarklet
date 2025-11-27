@@ -270,11 +270,10 @@ let $id = new Proxy({}, {
 
 
     <script>
-      // --- 1. Dexie 資料庫設定 (新增 'order' 欄位) ---
+      // --- 1. Dexie 資料庫設定 ---
       const db = new Dexie('AudioRecorderDB');
-      db.version(1).stores({
-          // 新增 order 索引，用於排序
-          recordings: '++id, order, timestamp, type, title'
+      db.version(2).stores({
+          recordings: '++id, order, timestamp, type'
       });
 
       // 獲取 DOM 元素
