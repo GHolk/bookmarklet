@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>reco diary 錄音日記</title>
+    <meta name="license" content="AGPL">
+    <script src="lib/dexie.js"         data-src="https://unpkg.com/dexie@4.2.1/dist/dexie.js"></script>
+    <script src="lib/jszip.min.js"     data-src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="lib/FileSaver.min.js" data-src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="lib/Sortable.min.js"  data-src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<!--
+TODO
+* webm, ogg
+** MediaRecorder option: bps 128000 (1MB/min) android auto 0.1M/min , webm
+* head 1~4
+* button clear play-toc
+* track button: insert append replace
+* duration
+-->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+
+        #controls, #fileOps {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button, input[type="file"] {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        /* ... (Buttons styling remains similar) ... */
+        #recordButton { background-color: #ff6347; color: white; }
+        #stopButton { background-color: #4CAF50; color: white; display: none; }
+        #pauseResumeButton { background-color: #ffc107; color: #333; display: none; }
+        #exportButton { background-color: #007bff; color: white; }
+        #importInput { display: none; }
+        #importButton { background-color: #6f42c1; color: white; }
+        #recordingTimer {
+            font-size: 1.5em;
+            color: #ff6347;
+            margin-bottom: 15px;
+        }
+
+        #recordingsList {
+            list-style: none;
+            padding: 0;
+            width: 80%;
+            max-width: 650px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: grab; /* 提示可拖曳 */
+        }
+
+        #recordingsList li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            background-color: white;
+            transition: background-color 0.3s;
+        }
+        [data-head-level="1"] { --head-border-color: green; }
+        [data-head-level="2"] { --head-border-color: red; }
+        [data-head-level="3"] { --head-border-color: orange; }
+        #recordingsList li[data-head-level] {
+            border: solid 0.3em var(--head-border-color, black);
+            background: yellow;
+        }
+
+        #recordingsList li:hover {
+            background-color: #f0f0f0;
+        }
+        #recordingsList li.focus {
+            background-color: lime;
+        }
+
+        /* Sortable.js 拖曳時的樣式 */
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #c8ebfb;
+        }
+
+        #recordingsList li > * {
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+
+        audio {
+            width: 35%;
+            min-width: 180px;
+        }
+
+        .order-indicator {
+            font-weight: bold;
+            color: #777;
+            width: 20px;
+            text-align: center;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>reco diary 錄音日記</h1>
+
+    <div id="controls">
+        <button id="recordButton">▶️ 開始錄音</button>
+        <button id="stopButton">⏹ 停止錄音</button>
+        <button id="pauseResumeButton">⏸ 暫停</button>
+        <button onclick="recorder.recordDiscard()">⏹ 捨棄</button>
+    </div>
+
+    <div id="fileOps">
+        <button id="exportButton">💾 匯出所有錄音 (ZIP)</button>
+        <input type="file" id="importInput" accept=".zip">
+        <button id="importButton">📂 匯入 ZIP 檔案</button>
+        <button onclick="recorder.deleteAll()">清空</button>
+    </div>
+    <div id="toolbar">
+      <select onchange="recorder.titleLevelOnChange(event)">
+        <option value="">title</option>
+        <option>1</option>
+        <option>2</option>
+        <option>3</option>
+        <option>unset</option>
+      </select>
+      <label>
+        <input class="toc-set reset-default" type="checkbox"
+               onchange="recorder.playHeadLevelSet({level:2,play:true,event})">
+        toc</label>
+      <label>
+        <input class="toc-set reset-default" type="checkbox"
+               onchange="recorder.playHeadLevelSet({level:Infinity,play:true,event})">
+        lv3</label>
+      <button onclick="recorder.pause()">pause</button>
+      <button onclick="recorder.rangeMove({prompt:true})">range-mv</button>
+      <!-- select onchange="recorder.rangeMove({event})">
+        <option value="">range</option>
+        <option>select</option>
+        <option>move</option>
+      </select-->
+    </div>
+
+    <div id="status">閒置中...</div>
+    <div id="recordingTimer">00:00</div>
+
+    <h2>錄音列表 (可拖曳調整順序)</h2>
+    <ul id="recordingsList">
+        <li>載入中...</li>
+    </ul>
+
+    <script>
+"use strict";
+
+let $d = document;
+
+let $w = window;
+
+function $all(q, root = $d) {
+    return Array.from(root.querySelectorAll(q));
+}
+
+function $(q, root, attr, q2, ...rest) {
+    if (!root) root = $d;
+    const e = root.querySelector(q);
+    if (!attr) return e;
+    if (!e[attr]) throw new Error(`sub property ${attr} is falsy: ${e[attr]}`);
+    return $(q2, e[attr], ...rest);
+}
+
+function run(f) {
+    return f();
+}
+
+function $create(tag, parent, attr) {
+    const elm = $d.createElement(tag);
+    if (parent) parent.appendChild(elm);
+    if (attr) Object.assign(elm, attr);
+    return elm;
+}
+
+function $text(q, regexp, root = $d) {
+    return $all(q, root).filter(e => regexp.test(e.textContent));
+}
+
+async function waitUntil(f, interval, timeout) {
+    let res;
+    const start = Date.now();
+    do {
+        await sleep(interval);
+        if ((Date.now() - start) / 1e3 > timeout) {
+            throw new Error("waitUntil timeout");
+        }
+        res = f();
+    } while (!res);
+    return res;
+}
+
+function activeNode() {
+    let e = document.activeElement;
+    while (e.shadowRoot) e = e.shadowRoot.activeElement;
+    return e;
+}
+
+function chomp(a) {
+    if (!a[0]) a.shift();
+}
+
+function pp(o) {
+    if (o && o.then) return o.then(o => pp(o));
+    return JSON.stringify(o);
+}
+
+let $id = new Proxy({}, {
+    get(o, id) {
+        let e = $(`#${id}`);
+        if (!e) e = $(`[name=${id}]`);
+        return e;
+    }
+});
+    </script>
+
+
+    <script>
+      // --- 1. Dexie 資料庫設定 (新增 'order' 欄位) ---
+      const db = new Dexie('AudioRecorderDB');
+      db.version(1).stores({
+          // 新增 order 索引，用於排序
+          recordings: '++id, order, timestamp, type'
+      });
+
+      // 獲取 DOM 元素
+      const recordButton = document.getElementById('recordButton');
+      const stopButton = document.getElementById('stopButton');
+      const pauseResumeButton = document.getElementById('pauseResumeButton');
+      const exportButton = document.getElementById('exportButton');
+      const importButton = document.getElementById('importButton');
+      const importInput = document.getElementById('importInput');
+      const recordingsList = document.getElementById('recordingsList');
+      const statusDiv = document.getElementById('status');
+
+      let mediaRecorder;
+      let audioChunks = [];
+      let audioStream;
+      let nextOrderValue = 0; // 用於給新錄音一個 order 值
+
+      // --- 2. 初始化 ---
+      window.addEventListener('load', initApp);
+      recordButton.addEventListener('click', startRecording);
+      stopButton.addEventListener('click', stopRecording);
+      pauseResumeButton.addEventListener('click', togglePauseResume);
+      exportButton.addEventListener('click', exportRecordingsToZip);
+      importButton.addEventListener('click', () => importInput.click());
+      importInput.addEventListener('change', importRecordingsFromZip);
+
+      async function initApp() {
+          const tmp = await db.recordings.get('recording')
+          if (tmp) {
+              const newBlob = new Blob(tmp.audioQueue, {type: 'audio/webm'})
+              await db.recordings.delete('recording')
+              const id = await saveRecording({
+                  audio: newBlob,
+                  timestamp: tmp.timestamp,
+                  order: tmp.order,
+                  duration: tmp.duration
+              });
+              statusDiv.textContent = `tmp recording save to ${id}`
+          }
+          $all('.reset-default').forEach(e => e.checked = e.defaultChecked)
+          await loadRecordings();
+          initSortable(); // 初始化拖曳功能
+      }
+
+
+      // --- 3. 拖曳排序功能 (Sortable.js) ---
+      function initSortable() {
+          new Sortable(recordingsList, {
+              animation: 150,
+              ghostClass: 'sortable-ghost',
+              onEnd: function (evt) {
+                  // 拖曳結束時，更新 IndexedDB 中的順序
+                  updateOrderInDB();
+              }
+          });
+      }
+
+      async function updateOrderInDB() {
+          const listItems = Array.from(recordingsList.children);
+          const updates = [];
+
+          // 從 DOM 順序決定新的 order 值
+          listItems.forEach((item, index) => {
+              // 排除列表是空時 Sortable.js 留下的提示文字
+              if (!item.dataset.id) return;
+
+              const id = parseInt(item.dataset.id);
+              const newOrder = index + 1; // 1-based order
+
+              // 準備更新
+              updates.push({
+                  key: id,
+                  changes: { order: newOrder }
+              });
+
+              // 同步更新 DOM 上的順序指示器
+              const orderIndicator = item.querySelector('.order-indicator');
+              if (orderIndicator) {
+                  orderIndicator.textContent = `${newOrder}.`;
+              }
+          });
+
+          try {
+              // 批次更新 Dexie 記錄
+              await db.recordings.bulkUpdate(updates);
+              statusDiv.textContent = '閒置中... (順序已儲存)';
+          } catch (error) {
+              console.error("更新錄音順序失敗: ", error);
+              statusDiv.textContent = '錯誤: 無法儲存新順序';
+          }
+      }
+
+
+      function tagStringFormat(ss, ...vs) {
+          let s = ''
+          for (var i=0; vs.length>i; i++) {
+              s += ss[i] + String(vs[i])
+          }
+          s += ss[i]
+          return s
+      }
+      const recorder = {
+          recordFocus: null,
+          recordFocusSet(o) {
+              const li = o.li
+              $all('#recordingsList li.focus').forEach(
+                  e => e.classList.remove('focus')
+              )
+              this.recordFocus = Number(li.dataset.id)
+              li.classList.add('focus')
+          },
+          async rangeMove(o) {
+              if (o.prompt) {
+                  const cmd = prompt('move $1...$2 after $3')
+                  if (!cmd || !cmd.trim()) return null
+                  let [i0, i1, i2] = cmd.split(/\s+/).map(x=>Number(x)-1)
+                  const l0 = $all(`#recordingsList li[data-id]`)
+                        .map(e => Number(e.dataset.id))
+                  const i2id = l0[i2]
+                  const lm = l0.splice(i0, i1-i0+1)
+                  const l1 = l0.slice()
+                  const l1i2 = l1.indexOf(i2id)
+                  if (l1i2 == -1) return null
+                  l1.splice(l1i2+1, 0, ...lm)
+                  const updates = l1.map((id, order) => false || {
+                      key: id,
+                      changes: {order: order+1}
+                  })
+                  await db.recordings.bulkUpdate(updates)
+                  await loadRecordings()
+              }
+          },
+          async recordDiscard() {
+              audioChunks = []
+              mediaRecorder.ondataavailable = mediaRecorder.onstop = null
+              recorder.timeUpdateEvent('stop')
+              stopRecording()
+              await db.recordings.delete('recording')
+              statusDiv.textContent = '已捨棄錄音';
+          },
+          playNext(o) {
+              const evt = o.event
+              const li0 = evt.target.parentNode
+              let li = li0.nextSibling
+              if (this.playHeadLevelOnly) {
+                  while (li) {
+                      const lv = Number(li.dataset.headLevel)
+                      if (lv <= this.playHeadLevelOnly) break
+                      li = li.nextSibling
+                  }
+              }
+              if (!li) return
+              const a2 = $('audio', li)
+              a2.play()
+          },
+          playHeadLevelOnly: null,
+          playHeadLevelSet(o) {
+              if (o.event) {
+                  const e = o.event.target
+                  if (!e.checked) {
+                      this.playHeadLevelOnly = null
+                      return
+                  }
+                  $all('.toc-set').forEach(e2 => e2 != e && (e2.checked = false))
+                  this.playHeadLevelOnly =  o.level
+                  if (o.play) {
+                      const li = $all(`li[data-head-level]`)
+                            .find(e => Number(e.dataset.headLevel) <= o.level)
+                      if (!li) return
+                      $('audio',li).play()
+                  }
+              }
+          },
+          async deleteAll() {
+              await db.recordings.clear()
+              await loadRecordings()
+          },
+          pause() {
+              const a = $('#recordingsList li.focus audio')
+              a.pause()
+          },
+          async titleLevelOnChange(evt) {
+              const sel = evt.target
+              const level = sel.value
+              if (!level) return
+              sel.value = ""
+              let type
+              if (level == 'unset') type = 'single'
+              else type = 'head-' + level
+              const id = this.recordFocus
+              await db.recordings.update(id, {type})
+              await loadRecordings()
+          },
+          chunkStartTime: null,
+          chunkTotalTime: null,
+          el() {
+              const q = tagStringFormat(...arguments)
+              return $(q)
+          },
+          // timeUpdateState: null,
+          timeUpdateEvent(evt) {
+              const now = Date.now()
+              // this.timeUpdateState = evt
+              if (evt == 'start') {
+                  this.chunkStartTime = now
+                  this.chunkTotalTime = 0
+                  this.timeUpdateToggle(true)
+              }
+              else if (evt == 'pause') {
+                  this.chunkTotalTime += now - this.chunkStartTime
+                  this.timeUpdateToggle(false)
+              }
+              else if (evt == 'resume') {
+                  this.chunkStartTime = now
+                  this.timeUpdateToggle(true)
+              }
+              else if (evt == 'stop') {
+                  this.timeUpdateToggle(false)
+                  this.chunkTotalTime + (now - this.chunkStartTime)
+              }
+          },
+          timeUpdateIntervalId: null,
+          timeUpdateToggle(t) {
+              if (t && this.timeUpdateIntervalId == null) {
+                  this.timeUpdateFn()
+                  this.timeUpdateIntervalId = setInterval(
+                      () => this.timeUpdateFn(), 1000
+                  )
+              }
+              else {
+                  clearInterval(this.timeUpdateIntervalId)
+                  this.timeUpdateIntervalId = null
+              }
+          },
+          timeUpdateGetTime() {
+              const ms = Date.now() - this.chunkStartTime
+              const t = (ms + this.chunkTotalTime)
+              return t
+          },
+          timeUpdateFn() {
+              const t = formatTime(this.timeUpdateGetTime() / 1000)
+              this.el`#recordingTimer`.textContent = t
+          }
+      }
+      // --- 4. 錄音核心邏輯 (start/stop/pauseResume) ---
+      async function startRecording() {
+          const time = Date.now()
+          try {
+              audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+              mediaRecorder = new MediaRecorder(audioStream);
+
+              mediaRecorder.ondataavailable = (event) => {
+                  audioChunks.push(event.data);
+                  db.recordings.put({
+                      id: 'recording',
+                      audio: null,
+                      audioQueue: audioChunks,
+                      timestamp: time,
+                      order: nextOrderValue + 1,
+                      duration: recorder.timeUpdateGetTime()
+                  })
+              };
+
+              mediaRecorder.onstop = async () => {
+                  recorder.timeUpdateEvent('stop')
+                  const audioBlob = new Blob(
+                      audioChunks, { type: 'audio/webm' }
+                  );
+                  await saveRecording({
+                      audio: audioBlob,
+                      timestamp: time,
+                      order: nextOrderValue + 1,
+                      duration: recorder.timeUpdateGetTime()
+                  });
+                  audioStream.getTracks().forEach(track => track.stop());
+                  audioChunks = []
+                  await db.recordings.delete('recording')
+                  await loadRecordings();
+              };
+
+              mediaRecorder.onpause = () => {
+                  recorder.timeUpdateEvent('pause')
+                  mediaRecorder.requestData()
+                  statusDiv.textContent = '已暫停...';
+                  pauseResumeButton.textContent = '▶️ 繼續';
+              };
+              mediaRecorder.onresume = () => {
+                  recorder.timeUpdateEvent('resume')
+                  statusDiv.textContent = '錄音中...';
+                  pauseResumeButton.textContent = '⏸ 暫停';
+              };
+
+              recorder.timeUpdateEvent('start')
+              mediaRecorder.start();
+              statusDiv.textContent = '錄音中...';
+
+              // UI 狀態切換
+              recordButton.style.display = 'none';
+              stopButton.style.display = 'inline-block';
+              pauseResumeButton.style.display = 'inline-block';
+              pauseResumeButton.textContent = '⏸ 暫停';
+
+          } catch (err) {
+              console.error('無法獲取麥克風: ', err);
+              statusDiv.textContent = `錯誤: 無法獲取麥克風 (${err.name})`;
+              alert('無法訪問您的麥克風。請檢查權限設定。');
+          }
+      }
+
+      function togglePauseResume() {
+          if (!mediaRecorder) return;
+          if (mediaRecorder.state === 'recording') {
+              mediaRecorder.pause();
+          } else if (mediaRecorder.state === 'paused') {
+              mediaRecorder.resume();
+          }
+      }
+
+      function stopRecording() {
+          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+              mediaRecorder.stop();
+              statusDiv.textContent = '處理錄音資料中...';
+          }
+
+          recordButton.style.display = 'inline-block';
+          stopButton.style.display = 'none';
+          pauseResumeButton.style.display = 'none';
+      }
+
+
+      // --- 5. 儲存並顯示錄音檔案 (新增 order 參數) ---
+      async function saveRecording(rec) {
+          if (!rec.type) rec.type = 'single'
+          try {
+              const id = await db.recordings.add(rec);
+
+              // 更新下一個 order 值
+              nextOrderValue = Math.max(nextOrderValue, rec.order);
+
+              statusDiv.textContent = '閒置中... (已儲存)';
+              return id;
+
+          } catch (error) {
+              console.error("無法將錄音儲存到 IndexedDB: ", error);
+              statusDiv.textContent = '錯誤: 儲存失敗';
+          }
+      }
+
+      function formatTime(seconds) {
+          const totalSeconds = Math.max(0, Math.floor(seconds || 0));
+          const minutes = Math.floor(totalSeconds / 60);
+          const remainingSeconds = totalSeconds % 60;
+          return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+      }
+
+      // --- 6. 從 IndexedDB 載入歷史錄音 (按 order 排序) ---
+      async function loadRecordings() {
+          try {
+              // 根據 order 欄位升序排序
+              const records = await db.recordings.orderBy('order').toArray();
+
+              recordingsList.innerHTML = '';
+              nextOrderValue = 0;
+
+              if (records.length === 0) {
+                  recordingsList.innerHTML = '<li>目前沒有任何錄音記錄。</li>';
+              } else {
+                  records.forEach(record => {
+                      // 更新 nextOrderValue 為目前最大的 order 值
+                      nextOrderValue = Math.max(nextOrderValue, record.order);
+                      addRecordingToPage(record);
+                  });
+              }
+          } catch (error) {
+              console.error("無法從 IndexedDB 載入錄音: ", error);
+              recordingsList.innerHTML = '<li>載入錄音時發生錯誤。</li>';
+          }
+      }
+
+      // --- 7. 將單個錄音物件顯示在網頁列表上 (新增 order 顯示) ---
+      function addRecordingToPage(record) {
+          const audioUrl = URL.createObjectURL(record.audio);
+          const dateObj = new Date(record.timestamp);
+          const dateStr = dateObj.toLocaleString();
+
+          const listItem = document.createElement('li');
+          listItem.id = `recording-${record.id}`;
+          // 將 ID 綁定到 data 屬性，方便 Sortable.js 讀取
+          listItem.dataset.id = record.id;
+          if (String(record.type).match(/^head-\d+$/)) { // head-\d
+              listItem.dataset.headLevel = record.type.slice(5)
+          }
+          if (record.id == recorder.recordFocus) listItem.classList.add('focus')
+          listItem.onclick = function (evt) {
+              recorder.recordFocusSet({li: this})
+          }
+
+          // 順序指示器
+          const orderIndicator = document.createElement('span');
+          orderIndicator.className = 'order-indicator';
+          orderIndicator.textContent = `${record.order}.`;
+
+          // 建立 Audio 播放器
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = audioUrl;
+          audio.onended = evt => recorder.playNext({event:evt})
+
+          // 建立下載連結
+          const downloadLink = document.createElement('a');
+          downloadLink.href = audioUrl;
+          downloadLink.download = `rec-${record.order}-${dateStr.replace(/[\/,\s:]/g, '_')}.webm`;
+          downloadLink.textContent = '下載';
+
+          // 建立刪除按鈕
+          const deleteButton = document.createElement('button');
+          deleteButton.textContent = '刪除';
+          deleteButton.style.cssText = 'background-color:#f44336; color:white; padding:5px 10px; margin-left:10px;';
+          deleteButton.onclick = () => deleteRecording(record.id);
+
+          // 建立時間標籤
+          const timeSpan = document.createElement('span');
+          timeSpan.textContent = dateStr;
+
+          // 將元素加入列表項 (順序 | 播放器 | 時間 | 下載 | 刪除)
+          listItem.appendChild(orderIndicator);
+          listItem.appendChild(audio);
+          listItem.appendChild(timeSpan);
+          listItem.appendChild(downloadLink);
+          listItem.appendChild(deleteButton);
+
+          recordingsList.appendChild(listItem);
+      }
+
+      // --- 8. 刪除錄音檔案 (刪除後重新排序) ---
+      async function deleteRecording(id) {
+          // if (!confirm('確定要刪除這條錄音記錄嗎？')) return;
+
+          try {
+              await db.recordings.delete(id);
+              // 刪除後需要重新載入列表並更新 order
+              await loadRecordings();
+              await updateOrderInDB();
+              statusDiv.textContent = '閒置中... (已刪除)';
+          } catch (error) {
+              console.error("無法刪除錄音: ", error);
+              alert("刪除失敗。");
+          }
+      }
+
+
+      // --- 9. 匯出多個錄音為 ZIP 檔案 (按 order 排序和儲存 metadata) ---
+      async function exportRecordingsToZip() {
+          statusDiv.textContent = '準備匯出檔案中...';
+          // 按 order 欄位升序讀取，確保 ZIP 中的順序正確
+          const records = await db.recordings.orderBy('order').toArray();
+
+          if (records.length === 0) {
+              alert("沒有錄音檔案可以匯出。");
+              statusDiv.textContent = '閒置中...';
+              return;
+          }
+
+          const zip = new JSZip();
+          const metadata = {};
+
+          records.forEach(record => {
+              if (record.order == null) return
+              const dateObj = new Date(record.timestamp);
+              // 檔名包含 order，以便匯入時讀取
+              const filename = `rec-${record.order}-${dateObj.getFullYear()}-${dateObj.getMonth()+1}-${dateObj.getDate()}.webm`;
+
+              // 將 Blob 加入到 ZIP 檔案
+              zip.file(filename, record.audio);
+
+              // 儲存 metadata (例如原始 timestamp 和 order)
+              metadata[filename] = {
+                  timestamp: record.timestamp,
+                  duration: record.duration,
+                  order: record.order
+              };
+          });
+
+          // 將 metadata 作為 JSON 檔案加入 ZIP
+          zip.file("metadata.json", JSON.stringify(metadata));
+
+          // 生成 ZIP 檔案
+          zip.generateAsync({type:"blob"})
+              .then(function(content) {
+                  saveAs(content, "voice_recordings_ordered.zip");
+                  statusDiv.textContent = '閒置中... (匯出完成)';
+              })
+              .catch(error => {
+                  console.error("ZIP 檔案生成失敗:", error);
+                  statusDiv.textContent = '錯誤: ZIP 匯出失敗';
+              });
+      }
+
+      // --- 10. 匯入 ZIP 檔案 (從 metadata.json 讀取順序) ---
+      async function importRecordingsFromZip(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          statusDiv.textContent = '正在讀取和匯入 ZIP 檔案...';
+          let filesImported = 0;
+          const recordsToImport = [];
+
+          try {
+              const zip = new JSZip();
+              const loadedZip = await zip.loadAsync(file);
+
+              // 1. 讀取 metadata.json 以取得原始順序
+              let metadata = {};
+              if (loadedZip.files["metadata.json"]) {
+                  const metaContent = await loadedZip.files["metadata.json"].async("text");
+                  metadata = JSON.parse(metaContent);
+              }
+
+              // 2. 遍歷音訊檔案
+              for (const filename of Object.keys(loadedZip.files)) {
+                  const zipEntry = loadedZip.files[filename];
+
+                  if (zipEntry.dir || !filename.toLowerCase().endsWith('.webm')) {
+                      continue;
+                  }
+
+                  const audioBlob = await zipEntry.async("blob");
+
+                  // 檢查 metadata 中是否有該檔案的原始順序和時間
+                  const originalMeta = metadata[filename] || {};
+
+                  // 新的 order 值，如果匯入的 ZIP 包含 metadata，則使用其順序。否則使用當前最大的 order 值 + 1
+                  const importOrder = originalMeta.order
+
+                  recordsToImport.push({
+                      timestamp: originalMeta.timestamp || new Date().getTime(),
+                      order: importOrder,
+                      audio: audioBlob
+                  });
+              }
+
+              // 3. 排序並批次儲存到 IndexedDB
+              // 優先使用檔案中的 order 欄位進行排序
+              recordsToImport.sort((a, b) => a.order - b.order);
+
+              // 為避免與現有記錄的 order 衝突，從當前最大的 order 值開始遞增
+              const currentOrder = nextOrderValue;
+              recordsToImport.forEach(record => {
+                  record.order += currentOrder;
+                  if (record.order > nextOrderValue) nextOrderValue = record.order
+              });
+
+              await db.recordings.bulkAdd(recordsToImport);
+
+              statusDiv.textContent = `閒置中... (成功匯入 ${recordsToImport.length} 個錄音)`;
+              importInput.value = '';
+
+              // 重新載入列表並更新 order
+              await loadRecordings();
+              await updateOrderInDB();
+
+          } catch (error) {
+              console.error("ZIP 檔案匯入失敗:", error);
+              statusDiv.textContent = '錯誤: 處理 ZIP 檔案失敗 ' + error;
+          }
+      }
+
+    </script>
+
+</body>
+</html>
