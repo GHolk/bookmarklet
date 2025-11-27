@@ -657,6 +657,9 @@ let $id = new Proxy({}, {
           const audio = document.createElement('audio');
           audio.controls = true;
           audio.src = audioUrl;
+          audio.onplay = evt => recorder.recordFocusSet({
+              li: evt.target.parentNode
+          })
           audio.onended = evt => recorder.playNext({event:evt})
 
           // 建立下載連結
