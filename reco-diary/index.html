@@ -731,6 +731,7 @@ let $id = new Proxy({}, {
 
               // 儲存 metadata (例如原始 timestamp 和 order)
               metadata[filename] = {
+                  type: record.type,
                   timestamp: record.timestamp,
                   duration: record.duration,
                   order: record.order
