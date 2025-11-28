@@ -13,12 +13,12 @@
 TODO
 * webm, ogg
 ** MediaRecorder option: bps 128000 (1MB/min) android auto 0.1M/min , webm
-* head 1~4
-* button clear play-toc
 * track button: insert append replace
-* duration
-* set datetime-local
+* show duration and pretty record
 * date skip same part
+* use check box to set focus
+* got commit like link list order
+* long press recording
 -->
     <style>
       #head-fix {
@@ -114,7 +114,10 @@ TODO
             color: gray;
             cursor: grab; /* 提示可拖曳 */
         }
-
+        #recordingsList li .record-id {
+          color: green;
+          font-weight: bold;
+        }
         /* Sortable.js 拖曳時的樣式 */
         .sortable-ghost {
             opacity: 0.4;
@@ -130,13 +133,6 @@ TODO
             width: 180px;
         }
 
-        .order-indicator {
-            font-weight: bold;
-            color: #777;
-            width: 20px;
-            text-align: center;
-        }
-
         #status {
             margin-top: 10px;
             font-weight: bold;
@@ -150,14 +146,15 @@ TODO
     <h1>reco diary 錄音日記</h1>
 
     <div id="controls">
-        <button id="recordButton">▶️ 開始錄音</button>
-        <button id="stopButton">⏹ 停止錄音</button>
-        <button id="pauseResumeButton">⏸ 暫停</button>
-        <button onclick="recorder.recordDiscard()">⏹ 捨棄</button>
+        <button id="recordButton">⏺️ 錄音</button>
+        <button id="stopButton">⏹️ 停止</button>
+        <button id="pauseResumeButton">⏸️ 暫停</button>
+        <button id="recordLongPress">⏺️ 標題</button>
+        <button onclick="recorder.recordDiscard()">✕ 捨棄</button>
     </div>
 
     <div id="fileOps">
-        <button id="exportButton">💾 export</button>
+        <button id="exportButton">📼 export</button>
         <input type="file" id="importInput" accept=".zip">
         <button id="importButton">📂 import</button>
         <button onclick="recorder.deleteAll()">清空</button>
@@ -181,12 +178,17 @@ TODO
       <button onclick="recorder.pause()">pause</button>
       <button onclick="recorder.rangeMove({prompt:true})">range-mv</button>
       <button onclick="recorder.titleSet({target:'focus'})">name</button>
-      <!-- select onchange="recorder.rangeMove({event})">
-        <option value="">range</option>
-        <option>select</option>
-        <option>move</option>
-      </select-->
-        </div>
+      </div>
+      <div style="text-align: center;">
+          <input type="date" name="date">
+          <input type="time" name="time">
+          <button onclick="recorder.dateDetect({time:0})">0:0</button>
+          <button title="set date" onclick="recorder.dateSet({target:'focus'})">
+            date</button>
+          <button onclick="recorder.dateSet({target:'focus',delete:true})"
+                title="clear date" >
+            unset</button>
+       </div>
 
     <div id="status">閒置中...</div>
     <div id="recordingTimer">00:00</div>
@@ -300,6 +302,15 @@ let $id = new Proxy({}, {
       importButton.addEventListener('click', () => importInput.click());
       importInput.addEventListener('change', importRecordingsFromZip);
 
+      {
+          const e = $id.recordLongPress
+          e.onpointerdown = startRecording
+          e.onpointerup = evt => {
+              stopRecording(evt)
+          }
+          e.remove()
+      }
+
       async function initApp() {
           const tmp = await db.recordings.get('recording')
           if (tmp) {
@@ -349,12 +360,6 @@ let $id = new Proxy({}, {
                   key: id,
                   changes: { order: newOrder }
               });
-
-              // 同步更新 DOM 上的順序指示器
-              const orderIndicator = item.querySelector('.order-indicator');
-              if (orderIndicator) {
-                  orderIndicator.textContent = `${newOrder}.`;
-              }
           });
 
           try {
@@ -367,6 +372,12 @@ let $id = new Proxy({}, {
           }
       }
 
+
+      function dateLocalAtGmt(d) {
+          let t = Number(d)
+          t -= d.getTimezoneOffset()*60*1000
+          return new Date(t)
+      }
 
       function tagStringFormat(ss, ...vs) {
           let s = ''
@@ -385,6 +396,7 @@ let $id = new Proxy({}, {
               )
               this.recordFocus = Number(li.dataset.id)
               li.classList.add('focus')
+              this.dateDetect({target:'focus'})
           },
           recordFocusGet(id = this.recordFocus) {
               return $(`#recordingsList li[data-id = "${id}"`)
@@ -405,23 +417,72 @@ let $id = new Proxy({}, {
                   }
               }
           },
+          async dateDetect(o) {
+            let d
+            if (o.time != null) {
+                $id.time.valueAsNumber = o.time
+                if ($id.date.value) return
+                const dl = dateLocalAtGmt(new Date())
+                ;[$id.date.value] = dl.toISOString().split('T')
+                return
+            }
+            if (o.target != null) {
+                let rec
+                if (o.target == 'focus') {
+                    if (!this.recordFocus) return
+                    rec = await db.recordings.get(this.recordFocus)
+                }
+                else if (o.target) rec = await db.recordings.get(o.target)
+                if (!rec || !rec.date) return
+                d = new Date(rec.date)
+            }
+            const dl = dateLocalAtGmt(d)
+            const m = dl.toISOString().match(/^(.*)T(.*)\./)
+            $id.date.value = m[1]
+            $id.time.value = m[2]
+          },
+          async dateSet(o) {
+            let id
+            if (o.target == 'focus') b: {
+                  id = this.recordFocus
+                  const li = this.recordFocusGet(id)
+                  let te = $('.date', li)
+                  const e = $id.date
+                  const t = $id.time
+                  if (o.delete) break b
+                  if (!e.value) return
+                  if (!t.value) t.valueAsNumber = 0
+                  const ds = `${e.value} ${t.value}`
+                  const d = new Date(ds)
+                  await db.recordings.update(id, {
+                      date: Number(d)
+                  })
+                  if (te) te.textContent = ds
+                  else await loadRecordings()
+            }
+            if (o.delete) {
+                await db.recordings.update(id, {date: undefined})
+                await loadRecordings()
+            }
+          },
           async rangeMove(o) {
               if (o.prompt) {
                   const cmd = prompt('move $1...$2 after $3')
                   if (!cmd || !cmd.trim()) return null
-                  let [i0, i1, i2] = cmd.split(/\s+/).map(x=>Number(x)-1)
+                  let [id0, id1, id2] = cmd.split(/\s+/).map(x=>Number(x))
                   const l0 = $all(`#recordingsList li[data-id]`)
                         .map(e => Number(e.dataset.id))
-                  const i2id = l0[i2]
-                  const lm = l0.splice(i0, i1-i0+1)
+                  const i0 = l0.indexOf(id0)
+                  const i1 = l0.indexOf(id1)
+                  if (!(i0 < i1)) return
                   const l1 = l0.slice()
-                  const l1i2 = l1.indexOf(i2id)
-                  if (l1i2 == -1) return null
-                  l1.splice(l1i2+1, 0, ...lm)
+                  const lm = l1.splice(i0, i1-i0+1)
+                  const i2 = l1.indexOf(id2)
+                  l1.splice(i2+1, 0, ...lm)
                   const updates = l1.map((id, order) => false || {
                       key: id,
                       changes: {order: order+1}
-                  })
+                  }).filter(o => l0[o.changes.order-1] != o.key)
                   await db.recordings.bulkUpdate(updates)
                   await loadRecordings()
               }
@@ -488,6 +549,11 @@ let $id = new Proxy({}, {
               const id = this.recordFocus
               await db.recordings.update(id, {type})
               await loadRecordings()
+          },
+          blobUrlRevoke() {
+            for (const au of $all('audio')) {
+                URL.revokeObjectURL(au.src)
+            }
           },
           chunkStartTime: null,
           chunkTotalTime: null,
@@ -581,12 +647,12 @@ let $id = new Proxy({}, {
                   recorder.timeUpdateEvent('pause')
                   mediaRecorder.requestData()
                   statusDiv.textContent = '已暫停...';
-                  pauseResumeButton.textContent = '▶️ 繼續';
+                  pauseResumeButton.textContent = '⏺️ 繼續';
               };
               mediaRecorder.onresume = () => {
                   recorder.timeUpdateEvent('resume')
                   statusDiv.textContent = '錄音中...';
-                  pauseResumeButton.textContent = '⏸ 暫停';
+                  pauseResumeButton.textContent = '⏸️ 暫停';
               };
 
               recorder.timeUpdateEvent('start')
@@ -597,7 +663,7 @@ let $id = new Proxy({}, {
               recordButton.style.display = 'none';
               stopButton.style.display = 'inline-block';
               pauseResumeButton.style.display = 'inline-block';
-              pauseResumeButton.textContent = '⏸ 暫停';
+              pauseResumeButton.textContent = '⏸️ 暫停';
 
           } catch (err) {
               console.error('無法獲取麥克風: ', err);
@@ -658,6 +724,7 @@ let $id = new Proxy({}, {
               // 根據 order 欄位升序排序
               const records = await db.recordings.orderBy('order').toArray();
 
+              recorder.blobUrlRevoke()
               recordingsList.innerHTML = '';
               nextOrderValue = 0;
 
@@ -694,11 +761,6 @@ let $id = new Proxy({}, {
               recorder.recordFocusSet({li: this})
           }
 
-          // 順序指示器
-          const orderIndicator = document.createElement('span');
-          orderIndicator.className = 'order-indicator';
-          orderIndicator.textContent = `${record.order}.`;
-
           // 建立 Audio 播放器
           const audio = document.createElement('audio');
           audio.controls = true;
@@ -728,10 +790,21 @@ let $id = new Proxy({}, {
           // 將元素加入列表項 (順序 | 播放器 | 時間 | 下載 | 刪除)
           $create('span', listItem, {
               className: 'drag-handle',
-              textContent: '☰'
+              textContent: '☰' // 易經乾卦，和常用作拖曳的符號很像
           })
-          listItem.appendChild(orderIndicator);
+          $create('span', listItem, {
+            className: 'record-id',
+            textContent: `&${record.id}`
+          })
           listItem.appendChild(audio);
+          if (record.date) {
+              const d = new Date(record.date)
+              const ds = dateLocalAtGmt(d).toISOString().replace(/T.*/, '')
+              $create('span', listItem, {
+                  className: 'date',
+                  textContent: ds
+              })
+          }
           if (record.title) $create('span', listItem, {
               className: 'title',
               textContent: record.title
