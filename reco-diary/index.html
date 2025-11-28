@@ -19,6 +19,7 @@ TODO
 * use check box to set focus
 * got commit like link list order
 * long press recording
+* focus before play (or it will not)
 -->
     <style>
       #head-fix {
@@ -508,6 +509,8 @@ let $id = new Proxy({}, {
               }
               if (!li) return
               const a2 = $('audio', li)
+              a2.scrollIntoView()
+              a2.currentTime = 0
               a2.play()
           },
           playHeadLevelOnly: null,
@@ -641,6 +644,8 @@ let $id = new Proxy({}, {
                   audioChunks = []
                   await db.recordings.delete('recording')
                   await loadRecordings();
+                  const li = $('#recordingsList > li:last-child')
+                  recorder.recordFocusSet({li})
               };
 
               mediaRecorder.onpause = () => {
