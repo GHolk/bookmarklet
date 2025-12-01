@@ -19,7 +19,6 @@ TODO
 * use check box to set focus
 * got commit like link list order
 * long press recording
-* focus before play (or it will not)
 -->
     <style>
       #head-fix {
@@ -35,7 +34,6 @@ TODO
       }
         body {
             margin: 0;
-            height: 100vh;
             --bg-color: #f4f4f9;
             background-color: var(--bg-color);
             display: flex;
@@ -775,12 +773,6 @@ let $id = new Proxy({}, {
           })
           audio.onended = evt => recorder.playNext({event:evt})
 
-          // 建立下載連結
-          const downloadLink = document.createElement('a');
-          downloadLink.href = audioUrl;
-          downloadLink.download = `rec-${record.order}-${dateStr.replace(/[\/,\s:]/g, '_')}.webm`;
-          downloadLink.textContent = '下載';
-
           // 建立刪除按鈕
           const deleteButton = document.createElement('button');
           deleteButton.textContent = '刪除';
@@ -815,7 +807,6 @@ let $id = new Proxy({}, {
               textContent: record.title
           })
           listItem.appendChild(timeSpan);
-          listItem.appendChild(downloadLink);
           listItem.appendChild(deleteButton);
 
           recordingsList.appendChild(listItem);
