@@ -473,7 +473,7 @@ let $id = new Proxy({}, {
                         .map(e => Number(e.dataset.id))
                   const i0 = l0.indexOf(id0)
                   const i1 = l0.indexOf(id1)
-                  if (!(i0 < i1)) return
+                  if (!(i0 <= i1)) return
                   const l1 = l0.slice()
                   const lm = l1.splice(i0, i1-i0+1)
                   const i2 = l1.indexOf(id2)
