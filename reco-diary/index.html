@@ -65,7 +65,6 @@ TODO
         #recordingTimer {
             font-size: 1.5em;
             color: #ff6347;
-            margin-bottom: 15px;
         }
 
         #recordingsList {
@@ -78,6 +77,9 @@ TODO
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
+        #recordingsList .label {
+            flex-basis: 100%;
+        }
         #recordingsList li {
             padding: 10px;
             border-bottom: 1px solid #eee;
@@ -129,7 +131,9 @@ TODO
         }
 
         audio {
-            width: 180px;
+            display: block;
+            margin: 1em;
+            margin-top: 0;
         }
 
         #status {
@@ -159,12 +163,10 @@ TODO
         <button onclick="recorder.deleteAll()">清空</button>
     </div>
     <div id="toolbar">
-      <select onchange="recorder.titleLevelOnChange(event)">
-        <option value="">title</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-        <option>unset</option>
+      <select onchange="recorder.rangeAction({event})">
+        <option value="">mv/rm</option>
+        <option>mv</option>
+        <option>rm</option>
       </select>
       <label>
         <input class="toc-set reset-default" type="checkbox"
@@ -174,9 +176,15 @@ TODO
         <input class="toc-set reset-default" type="checkbox"
                onchange="recorder.playHeadLevelSet({level:Infinity,play:true,event})">
         lv3</label>
-      <button onclick="recorder.pause()">pause</button>
-      <button onclick="recorder.rangeMove({prompt:true})">range-mv</button>
       <button onclick="recorder.titleSet({target:'focus'})">name</button>
+      <select onchange="recorder.titleLevelOnChange(event)">
+        <option value="">title</option>
+        <option>1</option>
+        <option>2</option>
+        <option>3</option>
+        <option>unset</option>
+      </select>
+      <button onclick="recorder.pause()">pause</button>
       </div>
       <div style="text-align: center;">
           <input type="date" name="date">
@@ -191,6 +199,7 @@ TODO
 
     <div id="status">閒置中...</div>
     <div id="recordingTimer">00:00</div>
+    <div><audio controls onended="recorder.playNext({event})"></audio></div>
     </div>
 
     <h2>錄音列表 (可拖曳調整順序)</h2>
@@ -324,6 +333,9 @@ let $id = new Proxy({}, {
               statusDiv.textContent = `tmp recording save to ${id}`
           }
           $all('.reset-default').forEach(e => e.checked = e.defaultChecked)
+          document.addEventListener('click', event =>
+              recorder.playRecord({event})
+          )
           await loadRecordings();
           initSortable(); // 初始化拖曳功能
       }
@@ -389,7 +401,8 @@ let $id = new Proxy({}, {
       const recorder = {
           recordFocus: null,
           recordFocusSet(o) {
-              const li = o.li
+              let li = o.li
+              if (o.id) li = $(`#recordingsList li[data-id = "${o.id}"`)
               $all('#recordingsList li.focus').forEach(
                   e => e.classList.remove('focus')
               )
@@ -464,11 +477,33 @@ let $id = new Proxy({}, {
                 await loadRecordings()
             }
           },
+          rangeAction(o) {
+              const {event} = o
+              const e = event.target
+              const action = e.value
+              e.value = ''
+              if (action == 'mv') return this.rangeMove({prompt:true})
+              if (action == 'rm') {
+                  const cmd = prompt('remove $1...$2')
+                  if (!cmd || !cmd.trim()) return null
+                  const [id0, id1] = cmd.split(/\s+/).map(x=>Number(x))
+                  const l0 = $all(`#recordingsList li[data-id]`)
+                        .map(e => Number(e.dataset.id))
+                  const i0 = l0.indexOf(id0)
+                  const i1 = l0.indexOf(id1)
+                  if (!(i0 <= i1)) return
+                  const ld = l0.slice(i0, i1+1)
+                  db.recordings.bulkDelete(ld).then(async () => {
+                      await loadRecordings();
+                      await updateOrderInDB();
+                  })
+              }
+          },
           async rangeMove(o) {
               if (o.prompt) {
                   const cmd = prompt('move $1...$2 after $3')
                   if (!cmd || !cmd.trim()) return null
-                  let [id0, id1, id2] = cmd.split(/\s+/).map(x=>Number(x))
+                  const [id0, id1, id2] = cmd.split(/\s+/).map(x=>Number(x))
                   const l0 = $all(`#recordingsList li[data-id]`)
                         .map(e => Number(e.dataset.id))
                   const i0 = l0.indexOf(id0)
@@ -494,9 +529,39 @@ let $id = new Proxy({}, {
               await db.recordings.delete('recording')
               statusDiv.textContent = '已捨棄錄音';
           },
+          async playRecord(opt) {
+              const evt = opt.event
+              let li = opt.li
+              let id = opt.id
+              if (evt) {
+                  const e = evt.target
+                  if (!e.matches('button.play')) return
+                  li = e.parentNode
+              }
+              if (li) id = Number(li.dataset.id)
+              const au = $('audio')
+              if (Number(au.dataset.playId) == id && !au.paused) {
+                  au.pause()
+                  return
+              }
+              if (Number(au.dataset.playId) != id) {
+                  au.dataset.playId = id
+                  if (/^blob:/.test(au.src)) URL.revokeObjectURL(au.src)
+                  const rec = await db.recordings.get(id)
+                  const u = URL.createObjectURL(rec.audio)
+                  au.src = u
+              }
+              this.recordFocusSet({id})
+              au.play()
+          },
           playNext(o) {
               const evt = o.event
-              const li0 = evt.target.parentNode
+              const e = evt.target
+              if (!e.matches('#recordingsList audio')) {
+                  const id0 = Number(e.dataset.playId)
+                  var li0 = $(`#recordingsList li[data-id = "${id0}"]`)
+              }
+              if (!li0) li0 = evt.target.parentNode
               let li = li0.nextSibling
               if (this.playHeadLevelOnly) {
                   while (li) {
@@ -506,10 +571,12 @@ let $id = new Proxy({}, {
                   }
               }
               if (!li) return
-              const a2 = $('audio', li)
-              a2.scrollIntoView()
-              a2.currentTime = 0
-              a2.play()
+              const id = Number(li.dataset.id)
+              this.playRecord({id})
+              li.scrollIntoView({
+                  smooth: true,
+                  block: 'end'
+              })
           },
           playHeadLevelOnly: null,
           playHeadLevelSet(o) {
@@ -520,14 +587,14 @@ let $id = new Proxy({}, {
                       return
                   }
                   $all('.toc-set').forEach(e2 => e2 != e && (e2.checked = false))
-                  this.playHeadLevelOnly =  o.level
-                  if (o.play) {
-                      const now = $all('audio').find(x => !x.paused)
-                      if (now) return
+                  this.playHeadLevelOnly = o.level
+                  if (o.play) b: {
+                      const au = $('audio')
+                      if (!au.paused) break b
                       const li = $all(`li[data-head-level]`)
                             .find(e => Number(e.dataset.headLevel) <= o.level)
                       if (!li) return
-                      $('audio',li).play()
+                      this.playRecord({li})
                   }
               }
           },
@@ -550,11 +617,6 @@ let $id = new Proxy({}, {
               const id = this.recordFocus
               await db.recordings.update(id, {type})
               await loadRecordings()
-          },
-          blobUrlRevoke() {
-            for (const au of $all('audio')) {
-                URL.revokeObjectURL(au.src)
-            }
           },
           chunkStartTime: null,
           chunkTotalTime: null,
@@ -727,7 +789,6 @@ let $id = new Proxy({}, {
               // 根據 order 欄位升序排序
               const records = await db.recordings.orderBy('order').toArray();
 
-              recorder.blobUrlRevoke()
               recordingsList.innerHTML = '';
               nextOrderValue = 0;
 
@@ -764,50 +825,44 @@ let $id = new Proxy({}, {
               recorder.recordFocusSet({li: this})
           }
 
-          // 建立 Audio 播放器
-          const audio = document.createElement('audio');
-          audio.controls = true;
-          audio.src = audioUrl;
-          audio.onplay = evt => recorder.recordFocusSet({
-              li: evt.target.parentNode
-          })
-          audio.onended = evt => recorder.playNext({event:evt})
-
           // 建立刪除按鈕
           const deleteButton = document.createElement('button');
           deleteButton.textContent = '刪除';
           deleteButton.style.cssText = 'background-color:#f44336; color:white; padding:5px 10px; margin-left:10px;';
           deleteButton.onclick = () => deleteRecording(record.id);
 
-          // 建立時間標籤
-          const timeSpan = document.createElement('span');
-          timeSpan.textContent = dateStr;
-
-
-          // 將元素加入列表項 (順序 | 播放器 | 時間 | 下載 | 刪除)
-          $create('span', listItem, {
-              className: 'drag-handle',
-              textContent: '☰' // 易經乾卦，和常用作拖曳的符號很像
-          })
-          $create('span', listItem, {
-            className: 'record-id',
-            textContent: `&${record.id}`
-          })
-          listItem.appendChild(audio);
+          const label = $create('div', null, {className: 'label'})
           if (record.date) {
               const d = new Date(record.date)
               const ds = dateLocalAtGmt(d).toISOString().replace(/T.*/, '')
-              $create('span', listItem, {
+              $create('span', label, {
                   className: 'date',
                   textContent: ds
               })
           }
-          if (record.title) $create('span', listItem, {
+          if (record.title) $create('span', label, {
               className: 'title',
               textContent: record.title
           })
-          listItem.appendChild(timeSpan);
+
+          const timeSpan = document.createElement('span');
+          timeSpan.textContent = dateStr;
+          label.appendChild(timeSpan);
+
+          $create('span', listItem, {
+            className: 'record-id',
+            textContent: `&${record.id}`
+          })
           listItem.appendChild(deleteButton);
+          const play = $create('button', listItem, {
+              textContent: '⏯️',
+              className: 'play'
+          })
+          $create('span', listItem, {
+              className: 'drag-handle',
+              textContent: '☰' // 易經乾卦，和常用作拖曳的符號很像
+          })
+          listItem.appendChild(label)
 
           recordingsList.appendChild(listItem);
       }
