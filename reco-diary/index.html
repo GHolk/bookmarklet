@@ -19,6 +19,7 @@ TODO
 * use check box to set focus
 * got commit like link list order
 * long press recording
+* divide blob table
 -->
     <style>
       #head-fix {
@@ -853,8 +854,12 @@ let $id = new Proxy({}, {
             className: 'record-id',
             textContent: `&${record.id}`
           })
+          $create('span', listItem, {
+              className: 'duration',
+              textContent: formatTime(record.duration / 1000)
+          })
           listItem.appendChild(deleteButton);
-          const play = $create('button', listItem, {
+          $create('button', listItem, {
               textContent: '⏯️',
               className: 'play'
           })
