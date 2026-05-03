@@ -168,6 +168,7 @@ TODO
         <option value="">do</option>
         <option>mv</option>
         <option>rm</option>
+        <option>js</option>
       </select>
       <label>
         <input class="toc-set reset-default" type="checkbox"
@@ -499,6 +500,7 @@ let $id = new Proxy({}, {
                       await updateOrderInDB();
                   })
               }
+              if (action == 'js') eval(prompt('js to eval'))
           },
           async rangeMove(o) {
               if (o.prompt) {
@@ -600,7 +602,12 @@ let $id = new Proxy({}, {
               }
           },
           async deleteAll() {
-              await db.recordings.clear()
+              // this will not reset incremental id
+              // await db.recordings.clear()
+
+              // delete and re-create db
+              await db.delete({disableAutoOpen: false})
+              $('audio').dataset.playId = '' // or same id will not play
               await loadRecordings()
           },
           pause() {
@@ -671,12 +678,16 @@ let $id = new Proxy({}, {
           }
       }
       // --- 4. 錄音核心邏輯 (start/stop/pauseResume) ---
+      var mediaRecorderOption = {
+          audioBitsPerSecond: 16000, // 2K/s, 1.2M/10min
+          audioBitrateMode: 'variable'
+      }
       async function startRecording() {
           const time = Date.now()
           try {
               audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-              mediaRecorder = new MediaRecorder(audioStream);
+              mediaRecorder = new MediaRecorder(audioStream, mediaRecorderOption);
 
               mediaRecorder.ondataavailable = (event) => {
                   audioChunks.push(event.data);
