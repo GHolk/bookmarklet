@@ -42,10 +42,14 @@ TODO
             align-items: center;
         }
 
-        #controls, #fileOps {
+        #controls {
             margin-bottom: 20px;
             display: flex;
             gap: 10px;
+        }
+
+        .status-bar {
+            font-size: 50%;
         }
 
         button, input[type="file"] {
@@ -60,12 +64,18 @@ TODO
         #recordButton { background-color: #ff6347; color: white; }
         #stopButton { background-color: #4CAF50; color: white; display: none; }
         #pauseResumeButton { background-color: #ffc107; color: #333; display: none; }
-        #exportButton { background-color: #007bff; color: white; }
         #importInput { display: none; }
-        #importButton { background-color: #6f42c1; color: white; }
+
+        select { width: 3em; }
+
         #recordingTimer {
             font-size: 1.5em;
             color: #ff6347;
+        }
+
+        h1, h2 {
+            font-size: 1em;
+            margin: 0.2em 0;
         }
 
         #recordingsList {
@@ -150,24 +160,26 @@ TODO
     <h1>reco diary 錄音日記</h1>
 
     <div id="controls">
+        <span class="status-bar">
+          <div id="status">閒置中...</div>
+          <div id="recordingTimer">00:00</div>
+        </span>
         <button id="recordButton">⏺️ 錄音</button>
         <button id="stopButton">⏹️ 停止</button>
         <button id="pauseResumeButton">⏸️ 暫停</button>
         <button id="recordLongPress">⏺️ 標題</button>
         <button onclick="recorder.recordDiscard()">✕ 捨棄</button>
+        <input type="file" id="importInput" accept=".zip">
     </div>
 
-    <div id="fileOps">
-        <button id="exportButton">📼 export</button>
-        <input type="file" id="importInput" accept=".zip">
-        <button id="importButton">📂 import</button>
-        <button onclick="recorder.deleteAll()">清空</button>
-    </div>
     <div id="toolbar">
       <select onchange="recorder.rangeAction({event})">
         <option value="">do</option>
         <option>mv</option>
         <option>rm</option>
+        <option>export</option>
+        <option>import</option>
+        <option>clear</option>
         <option>js</option>
       </select>
       <label>
@@ -198,8 +210,6 @@ TODO
             unset</button>
        </div>
 
-    <div id="status">閒置中...</div>
-    <div id="recordingTimer">00:00</div>
     <div><audio controls onended="recorder.playNext({event})"></audio></div>
     </div>
 
@@ -291,8 +301,6 @@ let $id = new Proxy({}, {
       const recordButton = document.getElementById('recordButton');
       const stopButton = document.getElementById('stopButton');
       const pauseResumeButton = document.getElementById('pauseResumeButton');
-      const exportButton = document.getElementById('exportButton');
-      const importButton = document.getElementById('importButton');
       const importInput = document.getElementById('importInput');
       const recordingsList = document.getElementById('recordingsList');
       const statusDiv = document.getElementById('status');
@@ -307,8 +315,6 @@ let $id = new Proxy({}, {
       recordButton.addEventListener('click', startRecording);
       stopButton.addEventListener('click', stopRecording);
       pauseResumeButton.addEventListener('click', togglePauseResume);
-      exportButton.addEventListener('click', exportRecordingsToZip);
-      importButton.addEventListener('click', () => importInput.click());
       importInput.addEventListener('change', importRecordingsFromZip);
 
       {
@@ -499,6 +505,9 @@ let $id = new Proxy({}, {
                       await updateOrderInDB();
                   })
               }
+              if (action == 'clear') recorder.deleteAll()
+              if (action == 'import') importInput.click()
+              if (action == 'export') exportRecordingsToZip()
               if (action == 'js') eval(prompt('js to eval'))
           },
           async rangeMove(o) {
