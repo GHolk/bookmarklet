@@ -49,7 +49,7 @@ TODO
         }
 
         button, input[type="file"] {
-            padding: 10px 20px;
+            padding: 8px 10px;
             font-size: 16px;
             cursor: pointer;
             border: none;
@@ -186,7 +186,6 @@ TODO
         <option>3</option>
         <option>unset</option>
       </select>
-      <button onclick="recorder.pause()">pause</button>
       </div>
       <div style="text-align: center;">
           <input type="date" name="date">
@@ -604,15 +603,12 @@ let $id = new Proxy({}, {
           async deleteAll() {
               // this will not reset incremental id
               // await db.recordings.clear()
+              if (!confirm('clear all data?')) return
 
               // delete and re-create db
               await db.delete({disableAutoOpen: false})
               $('audio').dataset.playId = '' // or same id will not play
               await loadRecordings()
-          },
-          pause() {
-              const a = $('#recordingsList li.focus audio')
-              a.pause()
           },
           async titleLevelOnChange(evt) {
               const sel = evt.target
