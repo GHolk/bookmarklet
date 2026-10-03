@@ -711,7 +711,8 @@ let $id = new Proxy({}, {
                   const audioBlob = new Blob(
                       audioChunks, { type: 'audio/webm' }
                   );
-                  await saveRecording({
+                  const focusId = recorder.recordFocus
+                  const id = await saveRecording({
                       audio: audioBlob,
                       timestamp: time,
                       order: nextOrderValue + 1,
@@ -721,8 +722,14 @@ let $id = new Proxy({}, {
                   audioChunks = []
                   await db.recordings.delete('recording')
                   await loadRecordings();
-                  const li = $('#recordingsList > li:last-child')
-                  recorder.recordFocusSet({li})
+                  const current = recorder.recordFocusGet(id)
+                  if (focusId != null) b: {
+                      const focus = recorder.recordFocusGet(focusId)
+                      if (focus.nextSibling == current) break b
+                      focus.after(current)
+                      await updateOrderInDB()
+                  }
+                  recorder.recordFocusSet({li: current})
               };
 
               mediaRecorder.onpause = () => {
