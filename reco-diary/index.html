@@ -20,6 +20,8 @@ TODO
 * got commit like link list order
 * long press recording
 * divide blob table
+
+* export range to zip
 -->
     <style>
       #head-fix {
@@ -491,7 +493,7 @@ let $id = new Proxy({}, {
               e.value = ''
               if (action == 'mv') return this.rangeMove({prompt:true})
               if (action == 'rm') {
-                  const cmd = prompt('remove $1...$2')
+                  const cmd = prompt('remove [$1...$2]', this.recordFocus)
                   if (!cmd || !cmd.trim()) return null
                   const [id0, id1] = cmd.split(/\s+/).map(x=>Number(x))
                   const l0 = $all(`#recordingsList li[data-id]`)
@@ -512,7 +514,7 @@ let $id = new Proxy({}, {
           },
           async rangeMove(o) {
               if (o.prompt) {
-                  const cmd = prompt('move $1...$2 after $3')
+                  const cmd = prompt('move [$1...$2] after $3', this.recordFocus)
                   if (!cmd || !cmd.trim()) return null
                   const [id0, id1, id2] = cmd.split(/\s+/).map(x=>Number(x))
                   const l0 = $all(`#recordingsList li[data-id]`)
