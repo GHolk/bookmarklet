@@ -299,15 +299,17 @@ let $id = new Proxy({}, {
           recordings: '++id, order, timestamp, type',
           large: ''
       }).upgrade(async tx => {
-          const audio = []
-          const key = []
-          await tx.table('recordings').toCollection().modify(o => {
-              if (!o.audio) return
-              audio.push(o.audio)
-              key.push(`r/${o.id}`)
-              delete o.audio
-          })
-          await tx.table('large').bulkAdd(audio, key)
+          if (db.verno > 2) {
+              const audio = []
+              const key = []
+              await tx.table('recordings').toCollection().modify(o => {
+                  if (!o.audio) return
+                  audio.push(o.audio)
+                  key.push(`r/${o.id}`)
+                  delete o.audio
+              })
+              await tx.table('large').bulkAdd(audio, key)
+          }
       });
 
       // 獲取 DOM 元素
