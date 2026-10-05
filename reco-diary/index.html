@@ -13,15 +13,14 @@
 TODO
 * webm, ogg
 ** MediaRecorder option: bps 128000 (1MB/min) android auto 0.1M/min , webm
-* track button: insert append replace
 * show duration and pretty record
 * date skip same part
 * use check box to set focus
-* got commit like link list order
+* git commit like link list order
 * long press recording
-* divide blob table
+* move recordings.record to large
 
-* export range to zip
+* scroll bar on mobile
 -->
     <style>
       #head-fix {
@@ -180,6 +179,7 @@ TODO
         <option>mv</option>
         <option>rm</option>
         <option>export</option>
+        <option>export-range</option>
         <option>import</option>
         <option>clear</option>
         <option>js</option>
@@ -523,6 +523,7 @@ let $id = new Proxy({}, {
               if (action == 'clear') recorder.deleteAll()
               if (action == 'import') importInput.click()
               if (action == 'export') exportRecordingsToZip()
+              if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
               if (action == 'js') eval(prompt('js to eval'))
           },
           async rangeMove(o) {
@@ -930,10 +931,19 @@ let $id = new Proxy({}, {
       }
 
       // --- 9. 匯出多個錄音為 ZIP 檔案 (按 order 排序和儲存 metadata) ---
-      async function exportRecordingsToZip() {
+      async function exportRecordingsToZip(opt = {}) {
           statusDiv.textContent = '準備匯出檔案中...';
           // 按 order 欄位升序讀取，確保 ZIP 中的順序正確
-          const records = await db.recordings.orderBy('order').toArray();
+          let records = await db.recordings.orderBy('order').toArray();
+          if (opt.prompt == 'range') {
+              const range = prompt('range [$1...$2]?', recorder.recordFocus)
+              if (!range) return
+              const id = range.split(' ').map(s => Number(s))
+              const i0 = records.findIndex(o => o.id == id[0])
+              const i1 = records.findIndex(o => o.id == id[1])
+              if (i0 == -1 || i1 == -1) return
+              records = records.slice(i0, i1+1)
+          }
           const aid = records.map(o => `r/${o.id}`)
           const audioList = await db.large.bulkGet(aid)
 
@@ -966,9 +976,8 @@ let $id = new Proxy({}, {
 
           let zipName = "reco-diary-save.zip"
           {
-              const h = $('#recordingsList li[data-head-level = "1"] .title') ||
-                  $('#recordingsList li[data-head-level = "2"] .title')
-              if (h) zipName = `reco-diary-save-${h.textContent}.zip`
+              const h = records.find(o => o.title && (o.type == 'head-1' || o.type == 'head-2'))
+              if (h) zipName = `reco-diary-save-${h.title}.zip`
           }
           // 生成 ZIP 檔案
           try {
