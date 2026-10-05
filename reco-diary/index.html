@@ -186,11 +186,11 @@ TODO
       </select>
       <label>
         <input class="toc-set reset-default" type="checkbox"
-               onchange="recorder.playHeadLevelSet({level:2,play:true,event})">
+               onchange="recorder.playHeadLevelSet({level:2 /*,play:true*/, event})">
         toc</label>
       <label>
         <input class="toc-set reset-default" type="checkbox"
-               onchange="recorder.playHeadLevelSet({level:Infinity,play:true,event})">
+               onchange="recorder.playHeadLevelSet({level:Infinity /*,play:true*/, event})">
         lv3</label>
       <button onclick="recorder.titleSet({target:'focus'})">name</button>
       <select onchange="recorder.titleLevelOnChange(event)">
