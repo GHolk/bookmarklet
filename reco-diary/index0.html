@@ -9,17 +9,19 @@
     <script src="lib/jszip.min.js"     data-src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="lib/FileSaver.min.js" data-src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="lib/Sortable.min.js"  data-src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
 <!--
 TODO
 * webm, ogg
 ** MediaRecorder option: bps 128000 (1MB/min) android auto 0.1M/min , webm
-* track button: insert append replace
 * show duration and pretty record
 * date skip same part
 * use check box to set focus
-* got commit like link list order
+* git commit like link list order
 * long press recording
-* divide blob table
+* move recordings.record to large
+
+* scroll bar on mobile
 -->
     <style>
       #head-fix {
@@ -152,6 +154,11 @@ TODO
             font-weight: bold;
             color: #333;
         }
+        .os-scrollbar {
+            min-width: 2rem;
+            max-height: 60%;
+            top: 30% !important;
+        }
     </style>
 </head>
 <body>
@@ -178,17 +185,19 @@ TODO
         <option>mv</option>
         <option>rm</option>
         <option>export</option>
+        <option>export-range</option>
         <option>import</option>
         <option>clear</option>
         <option>js</option>
+        <option>scrollbar</option>
       </select>
       <label>
         <input class="toc-set reset-default" type="checkbox"
-               onchange="recorder.playHeadLevelSet({level:2,play:true,event})">
+               onchange="recorder.playHeadLevelSet({level:2 /*,play:true*/, event})">
         toc</label>
       <label>
         <input class="toc-set reset-default" type="checkbox"
-               onchange="recorder.playHeadLevelSet({level:Infinity,play:true,event})">
+               onchange="recorder.playHeadLevelSet({level:Infinity /*,play:true*/, event})">
         lv3</label>
       <button onclick="recorder.titleSet({target:'focus'})">name</button>
       <select onchange="recorder.titleLevelOnChange(event)">
@@ -252,6 +261,10 @@ function $text(q, regexp, root = $d) {
     return $all(q, root).filter(e => regexp.test(e.textContent));
 }
 
+function sleep(s) {
+    return new Promise(wake => setTimeout(wake, s*1000))
+}
+
 async function waitUntil(f, interval, timeout) {
     let res;
     const start = Date.now();
@@ -293,8 +306,21 @@ let $id = new Proxy({}, {
     <script>
       // --- 1. Dexie 資料庫設定 ---
       const db = new Dexie('AudioRecorderDB');
-      db.version(2).stores({
-          recordings: '++id, order, timestamp, type'
+      db.version(3).stores({
+          recordings: '++id, order, timestamp, type',
+          large: ''
+      }).upgrade(async tx => {
+          if (db.verno > 2) {
+              const audio = []
+              const key = []
+              await tx.table('recordings').toCollection().modify(o => {
+                  if (!o.audio) return
+                  audio.push(o.audio)
+                  key.push(`r/${o.id}`)
+                  delete o.audio
+              })
+              await tx.table('large').bulkAdd(audio, key)
+          }
       });
 
       // 獲取 DOM 元素
@@ -345,8 +371,29 @@ let $id = new Proxy({}, {
           )
           await loadRecordings();
           initSortable(); // 初始化拖曳功能
+          enableScrollBar('auto')
       }
 
+      async function enableScrollBar(arg) {
+          if (arg == 'auto') {
+              if (navigator.maxTouchPoints > 0) true
+              else return // pc with mouse
+          }
+          if (typeof OverlayScrollbarsGlobal == 'undefined') {
+              const head = document.head
+              $create('link', head, {type: 'text/css', rel: 'stylesheet', href: 'lib/overlayscrollbars.scriptingenabled.min.css'})
+              $create('script', head, {type: 'application/javascript', src: 'lib/overlayscrollbars.browser.es5.min.js'})
+              await waitUntil(() => typeof OverlayScrollbarsGlobal != 'undefined', 0.2, 12)
+          }
+          var {
+              OverlayScrollbars,
+              ScrollbarsHidingPlugin,
+              SizeObserverPlugin,
+              ClickScrollPlugin
+          } = OverlayScrollbarsGlobal;
+          const osInstance = OverlayScrollbars(document.body, {});
+          $all('select option').find(e => e.value == 'scrollbar').remove()
+      }
 
       // --- 3. 拖曳排序功能 (Sortable.js) ---
       function initSortable() {
@@ -491,7 +538,7 @@ let $id = new Proxy({}, {
               e.value = ''
               if (action == 'mv') return this.rangeMove({prompt:true})
               if (action == 'rm') {
-                  const cmd = prompt('remove $1...$2')
+                  const cmd = prompt('remove [$1...$2]', this.recordFocus)
                   if (!cmd || !cmd.trim()) return null
                   const [id0, id1] = cmd.split(/\s+/).map(x=>Number(x))
                   const l0 = $all(`#recordingsList li[data-id]`)
@@ -501,6 +548,8 @@ let $id = new Proxy({}, {
                   if (!(i0 <= i1)) return
                   const ld = l0.slice(i0, i1+1)
                   db.recordings.bulkDelete(ld).then(async () => {
+                      const lld = ld.map(id => `r/${id}`)
+                      await db.large.bulkDelete(lld)
                       await loadRecordings();
                       await updateOrderInDB();
                   })
@@ -508,11 +557,13 @@ let $id = new Proxy({}, {
               if (action == 'clear') recorder.deleteAll()
               if (action == 'import') importInput.click()
               if (action == 'export') exportRecordingsToZip()
+              if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
+              if (action == 'scrollbar') enableScrollBar('menu-action')
               if (action == 'js') eval(prompt('js to eval'))
           },
           async rangeMove(o) {
               if (o.prompt) {
-                  const cmd = prompt('move $1...$2 after $3')
+                  const cmd = prompt('move [$1...$2] after $3', this.recordFocus)
                   if (!cmd || !cmd.trim()) return null
                   const [id0, id1, id2] = cmd.split(/\s+/).map(x=>Number(x))
                   const l0 = $all(`#recordingsList li[data-id]`)
@@ -558,8 +609,8 @@ let $id = new Proxy({}, {
               if (Number(au.dataset.playId) != id) {
                   au.dataset.playId = id
                   if (/^blob:/.test(au.src)) URL.revokeObjectURL(au.src)
-                  const rec = await db.recordings.get(id)
-                  const u = URL.createObjectURL(rec.audio)
+                  const audio = await db.large.get(`r/${id}`)
+                  const u = URL.createObjectURL(audio)
                   au.src = u
               }
               this.recordFocusSet({id})
@@ -711,7 +762,8 @@ let $id = new Proxy({}, {
                   const audioBlob = new Blob(
                       audioChunks, { type: 'audio/webm' }
                   );
-                  await saveRecording({
+                  const focusId = recorder.recordFocus
+                  const id = await saveRecording({
                       audio: audioBlob,
                       timestamp: time,
                       order: nextOrderValue + 1,
@@ -721,8 +773,14 @@ let $id = new Proxy({}, {
                   audioChunks = []
                   await db.recordings.delete('recording')
                   await loadRecordings();
-                  const li = $('#recordingsList > li:last-child')
-                  recorder.recordFocusSet({li})
+                  const current = recorder.recordFocusGet(id)
+                  if (focusId != null) b: {
+                      const focus = recorder.recordFocusGet(focusId)
+                      if (focus.nextSibling == current) break b
+                      focus.after(current)
+                      await updateOrderInDB()
+                  }
+                  recorder.recordFocusSet({li: current})
               };
 
               mediaRecorder.onpause = () => {
@@ -778,8 +836,11 @@ let $id = new Proxy({}, {
       // --- 5. 儲存並顯示錄音檔案 (新增 order 參數) ---
       async function saveRecording(rec) {
           if (!rec.type) rec.type = 'single'
+          const {audio} = rec
+          rec.audio = undefined
           try {
               const id = await db.recordings.add(rec);
+              await db.large.put(audio, `r/${id}`)
 
               // 更新下一個 order 值
               nextOrderValue = Math.max(nextOrderValue, rec.order);
@@ -826,7 +887,6 @@ let $id = new Proxy({}, {
 
       // --- 7. 將單個錄音物件顯示在網頁列表上 (新增 order 顯示) ---
       function addRecordingToPage(record) {
-          const audioUrl = URL.createObjectURL(record.audio);
           const dateObj = new Date(record.timestamp);
           const dateStr = dateObj.toLocaleString();
 
@@ -894,6 +954,7 @@ let $id = new Proxy({}, {
 
           try {
               await db.recordings.delete(id);
+              await db.large.delete(`r/${id}`)
               // 刪除後需要重新載入列表並更新 order
               await loadRecordings();
               await updateOrderInDB();
@@ -904,12 +965,22 @@ let $id = new Proxy({}, {
           }
       }
 
-
       // --- 9. 匯出多個錄音為 ZIP 檔案 (按 order 排序和儲存 metadata) ---
-      async function exportRecordingsToZip() {
+      async function exportRecordingsToZip(opt = {}) {
           statusDiv.textContent = '準備匯出檔案中...';
           // 按 order 欄位升序讀取，確保 ZIP 中的順序正確
-          const records = await db.recordings.orderBy('order').toArray();
+          let records = await db.recordings.orderBy('order').toArray();
+          if (opt.prompt == 'range') {
+              const range = prompt('range [$1...$2]?', recorder.recordFocus)
+              if (!range) return
+              const id = range.split(' ').map(s => Number(s))
+              const i0 = records.findIndex(o => o.id == id[0])
+              const i1 = records.findIndex(o => o.id == id[1])
+              if (i0 == -1 || i1 == -1) return
+              records = records.slice(i0, i1+1)
+          }
+          const aid = records.map(o => `r/${o.id}`)
+          const audioList = await db.large.bulkGet(aid)
 
           if (records.length === 0) {
               alert("沒有錄音檔案可以匯出。");
@@ -920,14 +991,14 @@ let $id = new Proxy({}, {
           const zip = new JSZip();
           const metadata = {};
 
-          records.forEach(record => {
+          records.forEach((record, i) => {
               if (record.order == null) return
               const dateObj = new Date(record.timestamp);
               // 檔名包含 order，以便匯入時讀取
               const filename = `rec-${record.order}-${record.timestamp}.webm`;
 
               // 將 Blob 加入到 ZIP 檔案
-              zip.file(filename, record.audio);
+              zip.file(filename, audioList[i]);
 
               // 儲存 metadata (例如原始 timestamp 和 order)
               metadata[filename] = pickObjectProperty(
@@ -940,9 +1011,8 @@ let $id = new Proxy({}, {
 
           let zipName = "reco-diary-save.zip"
           {
-              const h = $('#recordingsList li[data-head-level = "1"] .title') ||
-                  $('#recordingsList li[data-head-level = "2"] .title')
-              if (h) zipName = `reco-diary-save-${h.textContent}.zip`
+              const h = records.find(o => o.title && (o.type == 'head-1' || o.type == 'head-2'))
+              if (h) zipName = `reco-diary-save-${h.title}.zip`
           }
           // 生成 ZIP 檔案
           try {
@@ -1018,7 +1088,16 @@ let $id = new Proxy({}, {
                   if (record.order > nextOrderValue) nextOrderValue = record.order
               });
 
-              await db.recordings.bulkAdd(recordsToImport);
+              const audioList = {k:null, v:[]}
+              for (const o of recordsToImport) {
+                  audioList.v.push(o.audio)
+                  o.audio = undefined
+              }
+              const lid = await db.recordings.bulkAdd(
+                  recordsToImport, {allKeys: true}
+              );
+              audioList.k = lid.map(k => `r/${k}`)
+              await db.large.bulkAdd(audioList.v, audioList.k)
 
               statusDiv.textContent = `閒置中... (成功匯入 ${recordsToImport.length} 個錄音)`;
               importInput.value = '';

@@ -20,8 +20,6 @@ TODO
 * git commit like link list order
 * long press recording
 * move recordings.record to large
-
-* scroll bar on mobile
 -->
     <style>
       #head-fix {
@@ -157,7 +155,7 @@ TODO
         .os-scrollbar {
             min-width: 2rem;
             max-height: 60%;
-            top: 30% !important;
+            top: 30% !important; /* overwrite default style */
         }
     </style>
 </head>
@@ -343,7 +341,7 @@ let $id = new Proxy({}, {
       pauseResumeButton.addEventListener('click', togglePauseResume);
       importInput.addEventListener('change', importRecordingsFromZip);
 
-      {
+      if (false) {
           const e = $id.recordLongPress
           e.onpointerdown = startRecording
           e.onpointerup = evt => {
@@ -353,10 +351,10 @@ let $id = new Proxy({}, {
       }
 
       async function initApp() {
-          const tmp = await db.recordings.get('recording')
+          const tmp = await db.large.get('x/recording')
           if (tmp) {
               const newBlob = new Blob(tmp.audioQueue, {type: 'audio/webm'})
-              await db.recordings.delete('recording')
+              await db.large.delete('x/recording')
               const id = await saveRecording({
                   audio: newBlob,
                   timestamp: tmp.timestamp,
@@ -537,29 +535,29 @@ let $id = new Proxy({}, {
               const action = e.value
               e.value = ''
               if (action == 'mv') return this.rangeMove({prompt:true})
-              if (action == 'rm') {
-                  const cmd = prompt('remove [$1...$2]', this.recordFocus)
-                  if (!cmd || !cmd.trim()) return null
-                  const [id0, id1] = cmd.split(/\s+/).map(x=>Number(x))
-                  const l0 = $all(`#recordingsList li[data-id]`)
-                        .map(e => Number(e.dataset.id))
-                  const i0 = l0.indexOf(id0)
-                  const i1 = l0.indexOf(id1)
-                  if (!(i0 <= i1)) return
-                  const ld = l0.slice(i0, i1+1)
-                  db.recordings.bulkDelete(ld).then(async () => {
-                      const lld = ld.map(id => `r/${id}`)
-                      await db.large.bulkDelete(lld)
-                      await loadRecordings();
-                      await updateOrderInDB();
-                  })
-              }
+              if (action == 'rm') return this.rangeRemove({prompt:true})
               if (action == 'clear') recorder.deleteAll()
               if (action == 'import') importInput.click()
               if (action == 'export') exportRecordingsToZip()
               if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
               if (action == 'scrollbar') enableScrollBar('menu-action')
               if (action == 'js') eval(prompt('js to eval'))
+          },
+          async rangeRemove() {
+              const cmd = prompt('remove [$1...$2]', this.recordFocus)
+              if (!cmd || !cmd.trim()) return null
+              const [id0, id1] = cmd.split(/\s+/).map(x=>Number(x))
+              const l0 = $all(`#recordingsList li[data-id]`)
+                    .map(e => Number(e.dataset.id))
+              const i0 = l0.indexOf(id0)
+              const i1 = l0.indexOf(id1)
+              if (!(i0 <= i1)) return
+              const ld = l0.slice(i0, i1+1)
+              await db.recordings.bulkDelete(ld)
+              const lld = ld.map(id => `r/${id}`)
+              await db.large.bulkDelete(lld)
+              await loadRecordings()
+              await updateOrderInDB()
           },
           async rangeMove(o) {
               if (o.prompt) {
@@ -588,7 +586,7 @@ let $id = new Proxy({}, {
               mediaRecorder.ondataavailable = mediaRecorder.onstop = null
               recorder.timeUpdateEvent('stop')
               stopRecording()
-              await db.recordings.delete('recording')
+              await db.large.delete('x/recording')
               statusDiv.textContent = '已捨棄錄音';
           },
           async playRecord(opt) {
@@ -747,14 +745,12 @@ let $id = new Proxy({}, {
 
               mediaRecorder.ondataavailable = (event) => {
                   audioChunks.push(event.data);
-                  db.recordings.put({
-                      id: 'recording',
-                      audio: null,
+                  db.large.put({
                       audioQueue: audioChunks,
                       timestamp: time,
                       order: nextOrderValue + 1,
                       duration: recorder.timeUpdateGetTime()
-                  })
+                  }, 'x/recording')
               };
 
               mediaRecorder.onstop = async () => {
@@ -771,7 +767,7 @@ let $id = new Proxy({}, {
                   });
                   audioStream.getTracks().forEach(track => track.stop());
                   audioChunks = []
-                  await db.recordings.delete('recording')
+                  await db.large.delete('x/recording')
                   await loadRecordings();
                   const current = recorder.recordFocusGet(id)
                   if (focusId != null) b: {
