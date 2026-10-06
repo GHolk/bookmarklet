@@ -9,6 +9,7 @@
     <script src="lib/jszip.min.js"     data-src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="lib/FileSaver.min.js" data-src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="lib/Sortable.min.js"  data-src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
 <!--
 TODO
 * webm, ogg
@@ -153,6 +154,9 @@ TODO
             font-weight: bold;
             color: #333;
         }
+        .os-scrollbar {
+            min-width: 2rem;
+        }
     </style>
 </head>
 <body>
@@ -183,6 +187,7 @@ TODO
         <option>import</option>
         <option>clear</option>
         <option>js</option>
+        <option>scrollbar</option>
       </select>
       <label>
         <input class="toc-set reset-default" type="checkbox"
@@ -252,6 +257,10 @@ function $create(tag, parent, attr) {
 
 function $text(q, regexp, root = $d) {
     return $all(q, root).filter(e => regexp.test(e.textContent));
+}
+
+function sleep(s) {
+    return new Promise(wake => setTimeout(wake, s*1000))
 }
 
 async function waitUntil(f, interval, timeout) {
@@ -360,8 +369,29 @@ let $id = new Proxy({}, {
           )
           await loadRecordings();
           initSortable(); // 初始化拖曳功能
+          enableScrollBar('auto')
       }
 
+      async function enableScrollBar(arg) {
+          if (arg == 'auto') {
+              if (navigator.maxTouchPoints > 0) true
+              else return // pc with mouse
+          }
+          if (typeof OverlayScrollbarsGlobal == 'undefined') {
+              const head = document.head
+              $create('link', head, {type: 'text/css', rel: 'stylesheet', href: 'lib/overlayscrollbars.scriptingenabled.min.css'})
+              $create('script', head, {type: 'application/javascript', src: 'lib/overlayscrollbars.browser.es5.min.js'})
+              await waitUntil(() => typeof OverlayScrollbarsGlobal != 'undefined', 0.2, 12)
+          }
+          var {
+              OverlayScrollbars,
+              ScrollbarsHidingPlugin,
+              SizeObserverPlugin,
+              ClickScrollPlugin
+          } = OverlayScrollbarsGlobal;
+          const osInstance = OverlayScrollbars(document.body, {});
+          $all('select option').find(e => e.value == 'scrollbar').remove()
+      }
 
       // --- 3. 拖曳排序功能 (Sortable.js) ---
       function initSortable() {
@@ -526,6 +556,7 @@ let $id = new Proxy({}, {
               if (action == 'import') importInput.click()
               if (action == 'export') exportRecordingsToZip()
               if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
+              if (action == 'scrollbar') enableScrollBar('menu-action')
               if (action == 'js') eval(prompt('js to eval'))
           },
           async rangeMove(o) {
