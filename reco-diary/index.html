@@ -172,7 +172,6 @@ TODO
         <button id="recordButton">⏺️ 錄音</button>
         <button id="stopButton">⏹️ 停止</button>
         <button id="pauseResumeButton">⏸️ 暫停</button>
-        <button id="recordLongPress">⏺️ 標題</button>
         <button onclick="recorder.recordDiscard()">✕ 捨棄</button>
         <input type="file" id="importInput" accept=".zip">
     </div>
@@ -340,15 +339,6 @@ let $id = new Proxy({}, {
       stopButton.addEventListener('click', stopRecording);
       pauseResumeButton.addEventListener('click', togglePauseResume);
       importInput.addEventListener('change', importRecordingsFromZip);
-
-      if (false) {
-          const e = $id.recordLongPress
-          e.onpointerdown = startRecording
-          e.onpointerup = evt => {
-              stopRecording(evt)
-          }
-          e.remove()
-      }
 
       async function initApp() {
           const tmp = await db.large.get('x/recording')
