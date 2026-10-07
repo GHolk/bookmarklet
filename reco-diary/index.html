@@ -526,7 +526,7 @@ let $id = new Proxy({}, {
               e.value = ''
               if (action == 'mv') return this.rangeMove({prompt:true})
               if (action == 'rm') return this.rangeRemove({prompt:true})
-              if (action == 'clear') recorder.deleteAll()
+              if (action == 'clear') this.deleteAll()
               if (action == 'import') importInput.click()
               if (action == 'export') exportRecordingsToZip()
               if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
@@ -571,6 +571,16 @@ let $id = new Proxy({}, {
                   await loadRecordings()
               }
           },
+          /* <this event-target> */
+          handleDeleteButton(evt) {
+              const e = this.parentNode
+              const id = Number(e.dataset.id)
+              return deleteRecording(id)
+          },
+          handleItemClick(evt) {
+              recorder.recordFocusSet({li: this})
+          },
+          /* </this> */
           async recordDiscard() {
               audioChunks = []
               mediaRecorder.ondataavailable = mediaRecorder.onstop = null
@@ -884,15 +894,13 @@ let $id = new Proxy({}, {
               listItem.dataset.headLevel = record.type.slice(5)
           }
           if (record.id == recorder.recordFocus) listItem.classList.add('focus')
-          listItem.onclick = function (evt) {
-              recorder.recordFocusSet({li: this})
-          }
+          listItem.onclick = recorder.handleItemClick
 
           // 建立刪除按鈕
           const deleteButton = document.createElement('button');
           deleteButton.textContent = '刪除';
           deleteButton.style.cssText = 'background-color:#f44336; color:white; padding:5px 10px; margin-left:10px;';
-          deleteButton.onclick = () => deleteRecording(record.id);
+          deleteButton.onclick = recorder.handleDeleteButton
 
           const label = $create('div', null, {className: 'label'})
           if (record.date) {
@@ -937,6 +945,7 @@ let $id = new Proxy({}, {
       // --- 8. 刪除錄音檔案 (刪除後重新排序) ---
       async function deleteRecording(id) {
           // if (!confirm('確定要刪除這條錄音記錄嗎？')) return;
+          if (recorder.recordFocus == id) recorder.recordFocus = null
 
           try {
               await db.recordings.delete(id);
