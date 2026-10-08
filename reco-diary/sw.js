@@ -23,6 +23,7 @@ self.addEventListener('message', e => {
             await cacheAll()
             return 'ok'
         })()
+        break
     default:
         return
     }
