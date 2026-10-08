@@ -6,9 +6,9 @@
     <title>reco diary 錄音日記</title>
     <meta name="license" content="AGPL">
     <script>
-      var RecoSWReg
+      var RecoSWReg, RecoSWRegPromise
       if (navigator.serviceWorker) {
-          navigator.serviceWorker.register('sw.js')
+          RecoSWRegPromise = navigator.serviceWorker.register('sw.js')
               .then(x => RecoSWReg = x)
       }
     </script>
@@ -185,7 +185,7 @@ TODO
     </div>
 
     <div id="toolbar">
-      <select onchange="recorder.rangeAction({event})">
+      <select id="menu-action" onchange="recorder.rangeAction({event})">
         <option value="">do</option>
         <option>mv</option>
         <option>rm</option>
@@ -193,10 +193,12 @@ TODO
         <option>export-range</option>
         <option>import</option>
         <option>clear</option>
-        <option>cache-refresh</option>
-        <option>sw-update</option>
-        <option>sw-rm</option>
         <option>js</option>
+        <optgroup label="service worker">
+          <option>cache-refresh</option>
+          <option>sw-update</option>
+          <option>sw-rm</option>
+        </optgroup>
         <option>scrollbar</option>
       </select>
       <label>
@@ -371,6 +373,10 @@ let $id = new Proxy({}, {
           await loadRecordings();
           initSortable(); // 初始化拖曳功能
           enableScrollBar('auto')
+
+          let noSw = !navigator.serviceWorker
+          await RecoSWRegPromise.catch(err => noSw = true)
+          if (noSw) $('#menu-action [label="service worker"]').remove()
       }
 
       async function enableScrollBar(arg) {
@@ -391,7 +397,7 @@ let $id = new Proxy({}, {
               ClickScrollPlugin
           } = OverlayScrollbarsGlobal;
           const osInstance = OverlayScrollbars(document.body, {});
-          $all('select option').find(e => e.value == 'scrollbar').remove()
+          $all('#menu-action option').find(e => e.value == 'scrollbar').remove()
       }
 
       // --- 3. 拖曳排序功能 (Sortable.js) ---
