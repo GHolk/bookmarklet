@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>reco diary 錄音日記</title>
     <meta name="license" content="AGPL">
+    <script>
+      if (navigator.serviceWorker) navigator.serviceWorker.register('sw.js')
+    </script>
     <script src="lib/dexie.js"         data-src="https://unpkg.com/dexie@4.2.1/dist/dexie.js"></script>
     <script src="lib/jszip.min.js"     data-src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="lib/FileSaver.min.js" data-src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -20,6 +23,7 @@ TODO
 * git commit like link list order
 * long press recording
 * move recordings.record to large
+* service worker cache
 -->
     <style>
       #head-fix {
