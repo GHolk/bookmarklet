@@ -8,7 +8,8 @@
     <script>
       var RecoSWReg
       if (navigator.serviceWorker) {
-          RecoSWReg = navigator.serviceWorker.register('sw.js')
+          navigator.serviceWorker.register('sw.js')
+              .then(x => RecoSWReg = x)
       }
     </script>
     <script src="lib/dexie.js"         data-src="https://unpkg.com/dexie@4.2.1/dist/dexie.js"></script>
@@ -547,7 +548,9 @@ let $id = new Proxy({}, {
           },
           selectActionDict: {
               'cache-refresh'() {
-                  navigator.serviceWorker.controller.postMessage({action})
+                  navigator.serviceWorker.controller.postMessage({
+                      action: 'cache-refresh'
+                  })
               },
               'sw-update'() {RecoSWReg.update()},
               'sw-rm'() {RecoSWReg.unregister()},
