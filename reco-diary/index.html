@@ -6,7 +6,10 @@
     <title>reco diary 錄音日記</title>
     <meta name="license" content="AGPL">
     <script>
-      if (navigator.serviceWorker) navigator.serviceWorker.register('sw.js')
+      var RecoSWReg
+      if (navigator.serviceWorker) {
+          RecoSWReg = navigator.serviceWorker.register('sw.js')
+      }
     </script>
     <script src="lib/dexie.js"         data-src="https://unpkg.com/dexie@4.2.1/dist/dexie.js"></script>
     <script src="lib/jszip.min.js"     data-src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -189,6 +192,9 @@ TODO
         <option>export-range</option>
         <option>import</option>
         <option>clear</option>
+        <option>cache-refresh</option>
+        <option>sw-update</option>
+        <option>sw-rm</option>
         <option>js</option>
         <option>scrollbar</option>
       </select>
@@ -535,8 +541,18 @@ let $id = new Proxy({}, {
               if (action == 'import') importInput.click()
               if (action == 'export') exportRecordingsToZip()
               if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
-              if (action == 'scrollbar') enableScrollBar('menu-action')
-              if (action == 'js') eval(prompt('js to eval'))
+              if (this.selectActionDict[action]) {
+                  this.selectActionDict[action].call(this)
+              }
+          },
+          selectActionDict: {
+              'cache-refresh'() {
+                  navigator.serviceWorker.controller.postMessage({action})
+              },
+              'sw-update'() {RecoSWReg.update()},
+              'sw-rm'() {RecoSWReg.unregister()},
+              scrollbar() {enableScrollBar('menu-action')},
+              js() {eval(prompt('js to eval'))}
           },
           async rangeRemove() {
               const cmd = prompt('remove [$1...$2]', this.recordFocus)
