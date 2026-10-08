@@ -13,21 +13,19 @@ self.addEventListener('fetch', e => {
     }
     e.respondWith(f())
 })
-self.addEventListener('message', e => {
+self.addEventListener('message', async e => {
     const d = e.data
     let r
     switch (d.action) {
     case 'cache-refresh':
-        r = (async () => {
-            await caches.delete(cacheVersion)
-            await cacheAll()
-            return 'ok'
-        })()
+        await caches.delete(cacheVersion)
+        await cacheAll()
+        r = 'ok'
         break
     default:
         return
     }
-    if (r) e.respondWith(r)
+    if (r) self.postMessage(r)
 })
 
 async function cacheAll() {
