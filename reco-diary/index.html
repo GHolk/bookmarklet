@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>reco diary 錄音日記</title>
     <meta name="license" content="AGPL">
-    <script>
+    <script class="reco-sw">
       var RecoSWReg, RecoSWRegPromise
       if (navigator.serviceWorker) {
           RecoSWRegPromise = navigator.serviceWorker.register('sw.js')
@@ -197,7 +197,7 @@ TODO
         <option>import</option>
         <option>clear</option>
         <option>js</option>
-        <optgroup label="service worker">
+        <optgroup class="reco-sw" label="service worker">
           <option>cache-refresh</option>
           <option>sw-update</option>
           <option>sw-rm</option>
@@ -377,9 +377,27 @@ let $id = new Proxy({}, {
           initSortable(); // 初始化拖曳功能
           enableScrollBar('auto')
 
-          let noSw = !navigator.serviceWorker
-          await RecoSWRegPromise.catch(err => noSw = true)
-          if (noSw) $('#menu-action [label="service worker"]').remove()
+          RecoSWPatch()
+      }
+
+      // reco-sw
+      async function RecoSWPatch() {
+        let noSw = !navigator.serviceWorker
+        await RecoSWRegPromise.catch(err => noSw = true)
+        if (noSw) {
+          $('#menu-action .reco-sw').remove()
+          return
+        }
+
+        Object.assign(recorder.selectActionDict, {
+          'cache-refresh'() {
+              RecoSWReg.postMessage({
+                  action: 'cache-refresh'
+              })
+          },
+          'sw-update'() {RecoSWReg.update()},
+          'sw-rm'() {RecoSWReg.unregister()}
+        })
       }
 
       async function enableScrollBar(arg) {
@@ -461,7 +479,7 @@ let $id = new Proxy({}, {
           s += ss[i]
           return s
       }
-      const recorder = {
+      var recorder = {
           recordFocus: null,
           recordFocusSet(o) {
               let li = o.li
@@ -552,17 +570,10 @@ let $id = new Proxy({}, {
               if (action == 'export') exportRecordingsToZip()
               if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
               if (this.selectActionDict[action]) {
-                  this.selectActionDict[action].call(this)
+                  this.selectActionDict[action]()
               }
           },
           selectActionDict: {
-              'cache-refresh'() {
-                  navigator.serviceWorker.controller.postMessage({
-                      action: 'cache-refresh'
-                  })
-              },
-              'sw-update'() {RecoSWReg.update()},
-              'sw-rm'() {RecoSWReg.unregister()},
               scrollbar() {enableScrollBar('menu-action')},
               js() {eval(prompt('js to eval'))}
           },
