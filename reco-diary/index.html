@@ -319,8 +319,8 @@ let $id = new Proxy({}, {
     <script>
       // --- 1. Dexie 資料庫設定 ---
       const db = new Dexie('AudioRecorderDB');
-      db.version(3).stores({
-          recordings: '++id, order, timestamp, type',
+      db.version(4).stores({
+          recordings: '++id, timestamp, type',
           large: ''
       }).upgrade(async tx => {
           if (db.verno > 2) {
@@ -333,6 +333,17 @@ let $id = new Proxy({}, {
                   delete o.audio
               })
               await tx.table('large').bulkAdd(audio, key)
+          }
+          if (db.verno > 3) {
+              const rl = await tx.table('recordings').toArray()
+              let ol = []
+              for (const r of rl) ol[r.order] = r.id
+              ol = ol.filter(x => x != null)
+              await tx.table('large').put(ol, 'x/order')
+              await tx.table('recordings').bulkUpdate(rl.map(r => false || {
+                  key: r.id,
+                  changes: {order: undefined}
+              }))
           }
       });
 
@@ -347,7 +358,6 @@ let $id = new Proxy({}, {
       let mediaRecorder;
       let audioChunks = [];
       let audioStream;
-      let nextOrderValue = 0; // 用於給新錄音一個 order 值
 
       // --- 2. 初始化 ---
       window.addEventListener('load', initApp);
@@ -363,17 +373,17 @@ let $id = new Proxy({}, {
               await db.large.delete('x/recording')
               const id = await saveRecording({
                   audio: newBlob,
+                  order: 'last',
                   timestamp: tmp.timestamp,
-                  order: tmp.order,
                   duration: tmp.duration
               });
               statusDiv.textContent = `tmp recording save to ${id}`
           }
+          else await loadRecordings();
           $all('.reset-default').forEach(e => e.checked = e.defaultChecked)
           document.addEventListener('click', event =>
               recorder.playRecord({event})
           )
-          await loadRecordings();
           initSortable(); // 初始化拖曳功能
           enableScrollBar('auto')
 
@@ -436,26 +446,11 @@ let $id = new Proxy({}, {
 
       async function updateOrderInDB(opt = {}) {
           const listItems = Array.from(recordingsList.children);
-          const updates = [];
-
-          // 從 DOM 順序決定新的 order 值
-          listItems.forEach((item, index) => {
-              // 排除列表是空時 Sortable.js 留下的提示文字
-              if (!item.dataset.id) return;
-
-              const id = parseInt(item.dataset.id);
-              const newOrder = index + 1; // 1-based order
-
-              // 準備更新
-              updates.push({
-                  key: id,
-                  changes: { order: newOrder }
-              });
-          });
-
+          const order = listItems.filter(e => e.dataset.id)
+                .map(e => Number(e.dataset.id))
           try {
               // 批次更新 Dexie 記錄
-              await db.recordings.bulkUpdate(updates);
+              await db.large.put(order, 'x/order');
               if (opt.noStatus) true
               else statusDiv.textContent = '閒置中... (順序已儲存)';
           } catch (error) {
@@ -501,13 +496,13 @@ let $id = new Proxy({}, {
                   const te = $('.title', li)
                   let t = 'new-title'
                   if (te) t = te.textContent
-                  const t1 = prompt('new title', t)
-                  if (t1) {
-                      db.recordings.update(this.recordFocus, {
-                          title: t1
-                      })
-                      await loadRecordings()
-                  }
+                  let t1 = prompt('new title', t)
+                  if (t1 == null) return
+                  if (t1 == '') t1 = undefined // delete title if empty
+                  db.recordings.update(this.recordFocus, {
+                      title: t1
+                  })
+                  await loadRecordings()
               }
           },
           async dateDetect(o) {
@@ -607,11 +602,7 @@ let $id = new Proxy({}, {
                   const lm = l1.splice(i0, i1-i0+1)
                   const i2 = l1.indexOf(id2)
                   l1.splice(i2+1, 0, ...lm)
-                  const updates = l1.map((id, order) => false || {
-                      key: id,
-                      changes: {order: order+1}
-                  }).filter(o => l0[o.changes.order-1] != o.key)
-                  await db.recordings.bulkUpdate(updates)
+                  await db.large.put(l1, 'x/order')
                   await loadRecordings()
               }
           },
@@ -628,6 +619,8 @@ let $id = new Proxy({}, {
           async recordDiscard() {
               audioChunks = []
               mediaRecorder.ondataavailable = mediaRecorder.onstop = null
+              // TODO move this to stoprecording
+              audioStream.getTracks().forEach(track => track.stop());
               recorder.timeUpdateEvent('stop')
               stopRecording()
               await db.large.delete('x/recording')
@@ -791,7 +784,6 @@ let $id = new Proxy({}, {
                   audioChunks.push(event.data);
                   db.large.put({
                       timestamp: time,
-                      order: nextOrderValue + 1,
                       duration: recorder.timeUpdateGetTime(),
                       audioQueue: audioChunks
                   }, 'x/recording')
@@ -799,28 +791,18 @@ let $id = new Proxy({}, {
 
               mediaRecorder.onstop = async () => {
                   recorder.timeUpdateEvent('stop')
+                  audioStream.getTracks().forEach(track => track.stop());
                   const audioBlob = new Blob(
                       audioChunks, { type: 'audio/webm' }
                   );
-                  const focusId = recorder.recordFocus
                   const id = await saveRecording({
                       audio: audioBlob,
+                      order: 'auto',
                       timestamp: time,
-                      order: nextOrderValue + 1,
                       duration: recorder.timeUpdateGetTime()
                   });
-                  audioStream.getTracks().forEach(track => track.stop());
                   audioChunks = []
                   await db.large.delete('x/recording')
-                  await loadRecordings();
-                  const current = recorder.recordFocusGet(id)
-                  if (focusId != null) b: {
-                      const focus = recorder.recordFocusGet(focusId)
-                      if (focus.nextSibling == current) break b
-                      focus.after(current)
-                      await updateOrderInDB({noStatus: true})
-                  }
-                  recorder.recordFocusSet({li: current})
               };
 
               mediaRecorder.onpause = () => {
@@ -873,21 +855,34 @@ let $id = new Proxy({}, {
       }
 
 
-      // --- 5. 儲存並顯示錄音檔案 (新增 order 參數) ---
+      // --- 5. 儲存並顯示錄音檔案 ---
       async function saveRecording(rec) {
           if (!rec.type) rec.type = 'single'
           const {audio} = rec
           rec.audio = undefined
+          let ord = rec.order
+          rec.order = undefined
           try {
               const id = await db.recordings.add(rec);
               await db.large.put(audio, `r/${id}`)
+              const ol = await db.large.get('x/order') || []
 
-              // 更新下一個 order 值
-              nextOrderValue = Math.max(nextOrderValue, rec.order);
+              if (ord == 'auto' && recorder.recordFocus == null) ord = 'last'
+              if (ord == 'last') ol.push(id)
+              else if (typeof ord == 'number') {
+                  ol.splice(0, 0, id)
+              }
+              else if (ord == 'auto') {
+                  const i = ol.indexOf(recorder.recordFocus)
+                  ol.splice(i+1, 0, id)
+              }
+              else throw new Error(`unknown order ${ord}`)
+              await db.large.put(ol, 'x/order')
+              recorder.recordFocus = id
 
+              await loadRecordings()
               statusDiv.textContent = `閒置中... (已儲存 &${id})`;
               return id;
-
           } catch (error) {
               console.error("無法將錄音儲存到 IndexedDB: ", error);
               statusDiv.textContent = '錯誤: 儲存失敗';
@@ -901,31 +896,42 @@ let $id = new Proxy({}, {
           return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
       }
 
-      // --- 6. 從 IndexedDB 載入歷史錄音 (按 order 排序) ---
+      function assert(t, msg) {
+          if (!t) throw new Error(`[assert-fail] ${msg}`)
+      }
+
+      // --- 6. 從 IndexedDB 載入歷史錄音 ---
       async function loadRecordings() {
           try {
-              // 根據 order 欄位升序排序
-              const records = await db.recordings.orderBy('order').toArray();
-
-              recordingsList.innerHTML = '';
-              nextOrderValue = 0;
-
+              const records = await db.recordings.toArray();
               if (records.length === 0) {
                   recordingsList.innerHTML = '<li>目前沒有任何錄音記錄。</li>';
-              } else {
-                  records.forEach(record => {
-                      // 更新 nextOrderValue 為目前最大的 order 值
-                      nextOrderValue = Math.max(nextOrderValue, record.order);
-                      addRecordingToPage(record);
-                  });
+                  return
+              }
+              const order = await db.large.get('x/order') || []
+              const map = []
+              for (const r of records) map[r.id] = r
+              const ol = []
+              for (const i of order) {
+                  if (map[i]) ol.push(map[i])
+                  map[i] = null
+              }
+              ol.push(...map.filter(x => Boolean(x)))
+
+              recordingsList.innerHTML = '';
+              for (const record of ol) {
+                  addRecordingToPage(record);
               }
           } catch (error) {
               console.error("無法從 IndexedDB 載入錄音: ", error);
-              recordingsList.innerHTML = '<li>載入錄音時發生錯誤。</li>';
+              $create('li', recordingsList, {
+                  textContent: `載入錄音時發生錯誤 ${error}`
+              })
+              throw error
           }
       }
 
-      // --- 7. 將單個錄音物件顯示在網頁列表上 (新增 order 顯示) ---
+      // --- 7. 將單個錄音物件顯示在網頁列表上 ---
       function addRecordingToPage(record) {
           const dateObj = new Date(record.timestamp);
           const dateStr = dateObj.toLocaleString();
@@ -1007,8 +1013,12 @@ let $id = new Proxy({}, {
       // --- 9. 匯出多個錄音為 ZIP 檔案 (按 order 排序和儲存 metadata) ---
       async function exportRecordingsToZip(opt = {}) {
           statusDiv.textContent = '準備匯出檔案中...';
-          // 按 order 欄位升序讀取，確保 ZIP 中的順序正確
-          let records = await db.recordings.orderBy('order').toArray();
+          let records = await db.recordings.toArray();
+          const order = await db.large.get('x/order')
+          assert(records.length == order.length, 'record order mismatch')
+          const map = []
+          for (const r of records) map[r.id] = r
+          records = order.map(id => map[id])
           if (opt.prompt == 'range') {
               const range = prompt('range [$1...$2]?', recorder.recordFocus)
               if (!range) return
@@ -1018,8 +1028,6 @@ let $id = new Proxy({}, {
               if (i0 == -1 || i1 == -1) return
               records = records.slice(i0, i1+1)
           }
-          const aid = records.map(o => `r/${o.id}`)
-          const audioList = await db.large.bulkGet(aid)
 
           if (records.length === 0) {
               alert("沒有錄音檔案可以匯出。");
@@ -1027,27 +1035,23 @@ let $id = new Proxy({}, {
               return;
           }
 
+          const aid = records.map(o => `r/${o.id}`)
+          const audioList = await db.large.bulkGet(aid)
+
           const zip = new JSZip();
           const metadata = {};
 
           records.forEach((record, i) => {
-              if (record.order == null) return
-              const dateObj = new Date(record.timestamp);
-              // 檔名包含 order，以便匯入時讀取
-              const filename = `rec-${record.order}-${record.timestamp}.webm`;
-
-              // 將 Blob 加入到 ZIP 檔案
+              const filename = `rec-${i}-${record.timestamp}.webm`;
               zip.file(filename, audioList[i]);
-
-              // 儲存 metadata (例如原始 timestamp 和 order)
-              metadata[filename] = pickObjectProperty(
-                  record, 'type timestamp duration order title'.split(' ')
+              const o = pickObjectProperty(
+                  record, 'type timestamp duration title'.split(' ')
               )
+              o.order = i
+              metadata[filename] = o
           });
 
-          // 將 metadata 作為 JSON 檔案加入 ZIP
           zip.file("metadata.json", JSON.stringify(metadata));
-
           let zipName = "reco-diary-save.zip"
           {
               const h = records.find(o => o.title && (o.type == 'head-1' || o.type == 'head-2'))
@@ -1104,39 +1108,30 @@ let $id = new Proxy({}, {
                   // 檢查 metadata 中是否有該檔案的原始順序和時間
                   const originalMeta = metadata[filename] || {};
 
-                  // 新的 order 值，如果匯入的 ZIP 包含 metadata，則使用其順序。否則使用當前最大的 order 值 + 1
-                  const importOrder = originalMeta.order
-
                   const o = pickObjectProperty(
-                      originalMeta, 'timestamp duration type title'.split(' ')
+                      originalMeta, 'timestamp order duration type title'.split(' ')
                   )
                   if (!o.timestamp) o.timestamp = Date.now()
-                  o.order = importOrder
                   o.audio = audioBlob
                   recordsToImport.push(o);
               }
 
-              // 3. 排序並批次儲存到 IndexedDB
-              // 優先使用檔案中的 order 欄位進行排序
               recordsToImport.sort((a, b) => a.order - b.order);
-
-              // 為避免與現有記錄的 order 衝突，從當前最大的 order 值開始遞增
-              const currentOrder = nextOrderValue;
-              recordsToImport.forEach(record => {
-                  record.order += currentOrder;
-                  if (record.order > nextOrderValue) nextOrderValue = record.order
-              });
 
               const audioList = {k:null, v:[]}
               for (const o of recordsToImport) {
                   audioList.v.push(o.audio)
                   o.audio = undefined
+                  o.order = undefined
               }
               const lid = await db.recordings.bulkAdd(
                   recordsToImport, {allKeys: true}
               );
               audioList.k = lid.map(k => `r/${k}`)
               await db.large.bulkAdd(audioList.v, audioList.k)
+              const ol = await db.large.get('x/order') || []
+              ol.push(...lid)
+              await db.large.put(ol, 'x/order')
 
               statusDiv.textContent = `閒置中... (成功匯入 ${recordsToImport.length} 個錄音)`;
               importInput.value = '';

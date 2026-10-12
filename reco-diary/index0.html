@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>reco diary 錄音日記</title>
     <meta name="license" content="AGPL">
+    <script class="reco-sw">
+      var RecoSWReg, RecoSWRegPromise
+      if (navigator.serviceWorker) {
+          RecoSWRegPromise = navigator.serviceWorker.register('sw.js')
+              .then(x => RecoSWReg = x)
+      }
+    </script>
     <script src="lib/dexie.js"         data-src="https://unpkg.com/dexie@4.2.1/dist/dexie.js"></script>
     <script src="lib/jszip.min.js"     data-src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="lib/FileSaver.min.js" data-src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -20,8 +27,7 @@ TODO
 * git commit like link list order
 * long press recording
 * move recordings.record to large
-
-* scroll bar on mobile
+* service worker cache
 -->
     <style>
       #head-fix {
@@ -155,9 +161,12 @@ TODO
             color: #333;
         }
         .os-scrollbar {
-            min-width: 2rem;
+            min-width: 15vw;
             max-height: 60%;
-            top: 30% !important;
+            top: 30% !important; /* overwrite default style */
+        }
+        .os-scrollbar-vertical .os-scrollbar-handle {
+            min-height: 16% !important;
         }
     </style>
 </head>
@@ -174,13 +183,12 @@ TODO
         <button id="recordButton">⏺️ 錄音</button>
         <button id="stopButton">⏹️ 停止</button>
         <button id="pauseResumeButton">⏸️ 暫停</button>
-        <button id="recordLongPress">⏺️ 標題</button>
         <button onclick="recorder.recordDiscard()">✕ 捨棄</button>
         <input type="file" id="importInput" accept=".zip">
     </div>
 
     <div id="toolbar">
-      <select onchange="recorder.rangeAction({event})">
+      <select id="menu-action" onchange="recorder.rangeAction({event})">
         <option value="">do</option>
         <option>mv</option>
         <option>rm</option>
@@ -189,6 +197,11 @@ TODO
         <option>import</option>
         <option>clear</option>
         <option>js</option>
+        <optgroup class="reco-sw" label="service worker">
+          <option>cache-refresh</option>
+          <option>sw-update</option>
+          <option>sw-rm</option>
+        </optgroup>
         <option>scrollbar</option>
       </select>
       <label>
@@ -343,20 +356,11 @@ let $id = new Proxy({}, {
       pauseResumeButton.addEventListener('click', togglePauseResume);
       importInput.addEventListener('change', importRecordingsFromZip);
 
-      {
-          const e = $id.recordLongPress
-          e.onpointerdown = startRecording
-          e.onpointerup = evt => {
-              stopRecording(evt)
-          }
-          e.remove()
-      }
-
       async function initApp() {
-          const tmp = await db.recordings.get('recording')
+          const tmp = await db.large.get('x/recording')
           if (tmp) {
               const newBlob = new Blob(tmp.audioQueue, {type: 'audio/webm'})
-              await db.recordings.delete('recording')
+              await db.large.delete('x/recording')
               const id = await saveRecording({
                   audio: newBlob,
                   timestamp: tmp.timestamp,
@@ -372,6 +376,28 @@ let $id = new Proxy({}, {
           await loadRecordings();
           initSortable(); // 初始化拖曳功能
           enableScrollBar('auto')
+
+          RecoSWPatch()
+      }
+
+      // reco-sw
+      async function RecoSWPatch() {
+        let noSw = !navigator.serviceWorker
+        await RecoSWRegPromise.catch(err => noSw = true)
+        if (noSw) {
+          $('#menu-action .reco-sw').remove()
+          return
+        }
+
+        Object.assign(recorder.selectActionDict, {
+          'cache-refresh'() {
+              RecoSWReg.postMessage({
+                  action: 'cache-refresh'
+              })
+          },
+          'sw-update'() {RecoSWReg.update()},
+          'sw-rm'() {RecoSWReg.unregister()}
+        })
       }
 
       async function enableScrollBar(arg) {
@@ -392,7 +418,7 @@ let $id = new Proxy({}, {
               ClickScrollPlugin
           } = OverlayScrollbarsGlobal;
           const osInstance = OverlayScrollbars(document.body, {});
-          $all('select option').find(e => e.value == 'scrollbar').remove()
+          $all('#menu-action option').find(e => e.value == 'scrollbar').remove()
       }
 
       // --- 3. 拖曳排序功能 (Sortable.js) ---
@@ -408,7 +434,7 @@ let $id = new Proxy({}, {
           });
       }
 
-      async function updateOrderInDB() {
+      async function updateOrderInDB(opt = {}) {
           const listItems = Array.from(recordingsList.children);
           const updates = [];
 
@@ -430,7 +456,8 @@ let $id = new Proxy({}, {
           try {
               // 批次更新 Dexie 記錄
               await db.recordings.bulkUpdate(updates);
-              statusDiv.textContent = '閒置中... (順序已儲存)';
+              if (opt.noStatus) true
+              else statusDiv.textContent = '閒置中... (順序已儲存)';
           } catch (error) {
               console.error("更新錄音順序失敗: ", error);
               statusDiv.textContent = '錯誤: 無法儲存新順序';
@@ -452,7 +479,7 @@ let $id = new Proxy({}, {
           s += ss[i]
           return s
       }
-      const recorder = {
+      var recorder = {
           recordFocus: null,
           recordFocusSet(o) {
               let li = o.li
@@ -537,29 +564,34 @@ let $id = new Proxy({}, {
               const action = e.value
               e.value = ''
               if (action == 'mv') return this.rangeMove({prompt:true})
-              if (action == 'rm') {
-                  const cmd = prompt('remove [$1...$2]', this.recordFocus)
-                  if (!cmd || !cmd.trim()) return null
-                  const [id0, id1] = cmd.split(/\s+/).map(x=>Number(x))
-                  const l0 = $all(`#recordingsList li[data-id]`)
-                        .map(e => Number(e.dataset.id))
-                  const i0 = l0.indexOf(id0)
-                  const i1 = l0.indexOf(id1)
-                  if (!(i0 <= i1)) return
-                  const ld = l0.slice(i0, i1+1)
-                  db.recordings.bulkDelete(ld).then(async () => {
-                      const lld = ld.map(id => `r/${id}`)
-                      await db.large.bulkDelete(lld)
-                      await loadRecordings();
-                      await updateOrderInDB();
-                  })
-              }
-              if (action == 'clear') recorder.deleteAll()
+              if (action == 'rm') return this.rangeRemove({prompt:true})
+              if (action == 'clear') this.deleteAll()
               if (action == 'import') importInput.click()
               if (action == 'export') exportRecordingsToZip()
               if (action == 'export-range') exportRecordingsToZip({prompt:'range'})
-              if (action == 'scrollbar') enableScrollBar('menu-action')
-              if (action == 'js') eval(prompt('js to eval'))
+              if (this.selectActionDict[action]) {
+                  this.selectActionDict[action]()
+              }
+          },
+          selectActionDict: {
+              scrollbar() {enableScrollBar('menu-action')},
+              js() {eval(prompt('js to eval'))}
+          },
+          async rangeRemove() {
+              const cmd = prompt('remove [$1...$2]', this.recordFocus)
+              if (!cmd || !cmd.trim()) return null
+              const [id0, id1] = cmd.split(/\s+/).map(x=>Number(x))
+              const l0 = $all(`#recordingsList li[data-id]`)
+                    .map(e => Number(e.dataset.id))
+              const i0 = l0.indexOf(id0)
+              const i1 = l0.indexOf(id1)
+              if (!(i0 <= i1)) return
+              const ld = l0.slice(i0, i1+1)
+              await db.recordings.bulkDelete(ld)
+              const lld = ld.map(id => `r/${id}`)
+              await db.large.bulkDelete(lld)
+              await loadRecordings()
+              await updateOrderInDB()
           },
           async rangeMove(o) {
               if (o.prompt) {
@@ -583,12 +615,22 @@ let $id = new Proxy({}, {
                   await loadRecordings()
               }
           },
+          /* <this event-target> */
+          handleDeleteButton(evt) {
+              const e = this.parentNode
+              const id = Number(e.dataset.id)
+              return deleteRecording(id)
+          },
+          handleItemClick(evt) {
+              recorder.recordFocusSet({li: this})
+          },
+          /* </this> */
           async recordDiscard() {
               audioChunks = []
               mediaRecorder.ondataavailable = mediaRecorder.onstop = null
               recorder.timeUpdateEvent('stop')
               stopRecording()
-              await db.recordings.delete('recording')
+              await db.large.delete('x/recording')
               statusDiv.textContent = '已捨棄錄音';
           },
           async playRecord(opt) {
@@ -636,8 +678,8 @@ let $id = new Proxy({}, {
               const id = Number(li.dataset.id)
               this.playRecord({id})
               li.scrollIntoView({
-                  smooth: true,
-                  block: 'end'
+                  behavior: 'smooth',
+                  block: 'nearest'
               })
           },
           playHeadLevelOnly: null,
@@ -747,14 +789,12 @@ let $id = new Proxy({}, {
 
               mediaRecorder.ondataavailable = (event) => {
                   audioChunks.push(event.data);
-                  db.recordings.put({
-                      id: 'recording',
-                      audio: null,
-                      audioQueue: audioChunks,
+                  db.large.put({
                       timestamp: time,
                       order: nextOrderValue + 1,
-                      duration: recorder.timeUpdateGetTime()
-                  })
+                      duration: recorder.timeUpdateGetTime(),
+                      audioQueue: audioChunks
+                  }, 'x/recording')
               };
 
               mediaRecorder.onstop = async () => {
@@ -771,14 +811,14 @@ let $id = new Proxy({}, {
                   });
                   audioStream.getTracks().forEach(track => track.stop());
                   audioChunks = []
-                  await db.recordings.delete('recording')
+                  await db.large.delete('x/recording')
                   await loadRecordings();
                   const current = recorder.recordFocusGet(id)
                   if (focusId != null) b: {
                       const focus = recorder.recordFocusGet(focusId)
                       if (focus.nextSibling == current) break b
                       focus.after(current)
-                      await updateOrderInDB()
+                      await updateOrderInDB({noStatus: true})
                   }
                   recorder.recordFocusSet({li: current})
               };
@@ -845,7 +885,7 @@ let $id = new Proxy({}, {
               // 更新下一個 order 值
               nextOrderValue = Math.max(nextOrderValue, rec.order);
 
-              statusDiv.textContent = '閒置中... (已儲存)';
+              statusDiv.textContent = `閒置中... (已儲存 &${id})`;
               return id;
 
           } catch (error) {
@@ -898,15 +938,13 @@ let $id = new Proxy({}, {
               listItem.dataset.headLevel = record.type.slice(5)
           }
           if (record.id == recorder.recordFocus) listItem.classList.add('focus')
-          listItem.onclick = function (evt) {
-              recorder.recordFocusSet({li: this})
-          }
+          listItem.onclick = recorder.handleItemClick
 
           // 建立刪除按鈕
           const deleteButton = document.createElement('button');
           deleteButton.textContent = '刪除';
           deleteButton.style.cssText = 'background-color:#f44336; color:white; padding:5px 10px; margin-left:10px;';
-          deleteButton.onclick = () => deleteRecording(record.id);
+          deleteButton.onclick = recorder.handleDeleteButton
 
           const label = $create('div', null, {className: 'label'})
           if (record.date) {
@@ -951,6 +989,7 @@ let $id = new Proxy({}, {
       // --- 8. 刪除錄音檔案 (刪除後重新排序) ---
       async function deleteRecording(id) {
           // if (!confirm('確定要刪除這條錄音記錄嗎？')) return;
+          if (recorder.recordFocus == id) recorder.recordFocus = null
 
           try {
               await db.recordings.delete(id);
