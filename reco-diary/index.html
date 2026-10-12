@@ -619,10 +619,9 @@ let $id = new Proxy({}, {
           async recordDiscard() {
               audioChunks = []
               mediaRecorder.ondataavailable = mediaRecorder.onstop = null
-              // TODO move this to stoprecording
-              audioStream.getTracks().forEach(track => track.stop());
               recorder.timeUpdateEvent('stop')
               stopRecording()
+              audioStream.getTracks().forEach(track => track.stop());
               await db.large.delete('x/recording')
               statusDiv.textContent = '已捨棄錄音';
           },
