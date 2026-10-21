@@ -408,7 +408,7 @@ let $id = new Proxy({}, {
 
         Object.assign(recorder.selectActionDict, {
           'cache-refresh'() {
-              RecoSWReg.postMessage({
+              RecoSWReg.active.postMessage({
                   action: 'cache-refresh'
               })
           },
