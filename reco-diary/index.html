@@ -149,10 +149,11 @@ TODO
             margin-bottom: 5px;
         }
 
+        .audio-bar > * {
+            vertical-align: middle;
+        }
         audio {
-            display: block;
-            margin: 1em;
-            margin-top: 0;
+            margin: 0.5em 0;
         }
 
         #status {
@@ -232,7 +233,13 @@ TODO
             unset</button>
        </div>
 
-    <div><audio controls onended="recorder.playNext({event})"></audio></div>
+      <div class="audio-bar">
+        <audio controls loop onended="recorder.playNext({event})"></audio>
+        <label>
+        <input class="reset-default" type="checkbox" checked
+               onchange="recorder.loopSet({event})">
+        loop</label>
+      </div>
     </div>
 
     <h2>錄音列表 (可拖曳調整順序)</h2>
@@ -368,18 +375,18 @@ let $id = new Proxy({}, {
 
       async function initApp() {
           const tmp = await db.large.get('x/recording')
-          if (tmp) {
+          if (!tmp) await loadRecordings()
+          else {
               const newBlob = new Blob(tmp.audioQueue, {type: 'audio/webm'})
-              await db.large.delete('x/recording')
               const id = await saveRecording({
                   audio: newBlob,
                   order: 'last',
                   timestamp: tmp.timestamp,
                   duration: tmp.duration
               });
+              await db.large.delete('x/recording')
               statusDiv.textContent = `tmp recording save to ${id}`
           }
-          else await loadRecordings();
           $all('.reset-default').forEach(e => e.checked = e.defaultChecked)
           document.addEventListener('click', event =>
               recorder.playRecord({event})
@@ -551,6 +558,12 @@ let $id = new Proxy({}, {
             if (o.delete) {
                 await db.recordings.update(id, {date: undefined})
                 await loadRecordings()
+            }
+          },
+          loopSet(opt) {
+            if (opt.event) {
+              const e = opt.event.target
+              $('audio').loop = e.checked
             }
           },
           rangeAction(o) {
