@@ -198,6 +198,8 @@ TODO
         <option>import</option>
         <option>clear</option>
         <option>js</option>
+        <option>rm-undo</option>
+        <option>rm-clean</option>
         <optgroup class="reco-sw" label="service worker">
           <option>cache-refresh</option>
           <option>sw-update</option>
@@ -393,6 +395,10 @@ let $id = new Proxy({}, {
           )
           initSortable(); // 初始化拖曳功能
           enableScrollBar('auto')
+          const startTime = Date.now()
+          sleep(30).then(() => {
+              recorder.deleteMarkClean({prompt: true, before: startTime})
+          })
 
           RecoSWPatch()
       }
@@ -583,7 +589,29 @@ let $id = new Proxy({}, {
           },
           selectActionDict: {
               scrollbar() {enableScrollBar('menu-action')},
-              js() {eval(prompt('js to eval'))}
+              js() {eval(prompt('js to eval'))},
+              async 'rm-clean'() {
+                  recorder.deleteMarkClean({prompt: true})
+              },
+              async 'rm-undo'() {
+                  const dl = await db.recordings.where({type: 'delete'}).toArray()
+                  dl.sort((a,b) => b.deleteTime - a.deleteTime) // descending
+                  const df = d => (new Date(d)).toLocaleString()
+                  const info = dl.map(o => `&${o.id} del:${df(o.deleteTime)} h:${o.title||''}`).join('\n')
+                  if (info.length == 0) {
+                      alert('trash can empty')
+                      return
+                  }
+                  let id = prompt(`trash-can:\n${info}\n\nrecover id:`, dl[0].id)
+                  if (!id) return
+                  const idl = id.split(/\s+/).map(id => Number(id))
+                  for (const i of idl) {
+                      const o = dl.find(o => o.id == i)
+                      await recorder.deleteMarkRecover(i, o)
+                  }
+                  await loadRecordings()
+                  await recorder.recordFocusSet({id: idl[idl.length-1]})
+              }
           },
           async rangeRemove() {
               const cmd = prompt('remove [$1...$2]', this.recordFocus)
@@ -595,11 +623,40 @@ let $id = new Proxy({}, {
               const i1 = l0.indexOf(id1)
               if (!(i0 <= i1)) return
               const ld = l0.slice(i0, i1+1)
-              await db.recordings.bulkDelete(ld)
-              const lld = ld.map(id => `r/${id}`)
-              await db.large.bulkDelete(lld)
+              const ok = confirm(`remove ${ld.length} [${ld.join(',')}]?`)
+              if (!ok) return
+              let d0 = Date.now()
+              const c = db.recordings.where('id').anyOf(ld)
+                  .and(o => o.type != 'delete')
+                  // in case delete mark record inside range
+              await c.modify(o => {
+                  o.typeOrigin = o.type
+                  o.type = 'delete'
+                  o.deleteTime = d0
+                  d0 += 1
+              })
               await loadRecordings()
-              await updateOrderInDB()
+          },
+          async deleteMarkRecover(id, o) {
+              if (!o) o = await db.recordings.get(id)
+              await db.recordings.update(id, {
+                  type: o.typeOrigin,
+                  typeOrigin: undefined,
+                  deleteTime: undefined
+              })
+          },
+          async deleteMarkClean(opt = {}) {
+              let l = await db.recordings.where({type:'delete'}).toArray()
+              if (typeof opt.before == 'number') {
+                  l = l.filter(o => o.deleteTime < opt.before)
+              }
+              const d = l.map(o => o.id)
+              if (l.length == 0) return
+              if (opt.prompt) {
+                  if (!confirm(`clean trash can (${l.length})?`)) return
+              }
+              await db.recordings.bulkDelete(d)
+              await db.large.bulkDelete(d.map(id => `r/{$id}`))
           },
           async rangeMove(o) {
               if (o.prompt) {
@@ -623,9 +680,10 @@ let $id = new Proxy({}, {
           handleDeleteButton(evt) {
               const e = this.parentNode
               const id = Number(e.dataset.id)
-              return deleteRecording(id)
+              return deleteRecordingMark(id)
           },
           handleItemClick(evt) {
+              if (evt.target.textContent == '刪除') return
               recorder.recordFocusSet({li: this})
           },
           /* </this> */
@@ -909,13 +967,22 @@ let $id = new Proxy({}, {
       }
 
       function assert(t, msg) {
+          let o
+          if (msg && typeof msg == 'object') {
+              o = msg
+          }
+          if (o && o.alert && !t) {
+              msg = o.alert
+              alert(`[assert-fail] ${msg}`)
+          }
           if (!t) throw new Error(`[assert-fail] ${msg}`)
       }
 
       // --- 6. 從 IndexedDB 載入歷史錄音 ---
       async function loadRecordings() {
           try {
-              const records = await db.recordings.toArray();
+              let records = await db.recordings
+                  .where('type').notEqual('delete').toArray();
               if (records.length === 0) {
                   recordingsList.innerHTML = '<li>目前沒有任何錄音記錄。</li>';
                   return
@@ -1004,17 +1071,18 @@ let $id = new Proxy({}, {
           recordingsList.appendChild(listItem);
       }
 
-      // --- 8. 刪除錄音檔案 (刪除後重新排序) ---
-      async function deleteRecording(id) {
+      async function deleteRecordingMark(id) {
           // if (!confirm('確定要刪除這條錄音記錄嗎？')) return;
           if (recorder.recordFocus == id) recorder.recordFocus = null
 
           try {
-              await db.recordings.delete(id);
-              await db.large.delete(`r/${id}`)
-              // 刪除後需要重新載入列表並更新 order
+              const o = await db.recordings.get(id)
+              await db.recordings.update(id, {
+                  type: 'delete',
+                  typeOrigin: o.type,
+                  deleteTime: Date.now()
+              });
               await loadRecordings();
-              await updateOrderInDB();
               statusDiv.textContent = '閒置中... (已刪除)';
           } catch (error) {
               console.error("無法刪除錄音: ", error);
@@ -1022,22 +1090,27 @@ let $id = new Proxy({}, {
           }
       }
 
-      // --- 9. 匯出多個錄音為 ZIP 檔案 (按 order 排序和儲存 metadata) ---
       async function exportRecordingsToZip(opt = {}) {
           statusDiv.textContent = '準備匯出檔案中...';
-          let records = await db.recordings.toArray();
+          let records = await db.recordings.where('type').notEqual('delete').toArray()
           const order = await db.large.get('x/order')
-          assert(records.length == order.length, 'record order mismatch')
           const map = []
           for (const r of records) map[r.id] = r
-          records = order.map(id => map[id])
+          const r2 = []
+          for (const id of order) {
+              if (!map[id]) continue
+              r2.push(map[id])
+              map[id] = null
+          }
+          assert(map.find(x => Boolean(x)), {alert:'un-order record exist'})
+          records = r2
           if (opt.prompt == 'range') {
               const range = prompt('range [$1...$2]?', recorder.recordFocus)
               if (!range) return
               const id = range.split(' ').map(s => Number(s))
               const i0 = records.findIndex(o => o.id == id[0])
               const i1 = records.findIndex(o => o.id == id[1])
-              if (i0 == -1 || i1 == -1) return
+              assert(i0 != -1 && i1 != -1, {alert: 'index not found'})
               records = records.slice(i0, i1+1)
           }
 
@@ -1047,6 +1120,7 @@ let $id = new Proxy({}, {
               return;
           }
 
+          // TODO: do not get all once
           const aid = records.map(o => `r/${o.id}`)
           const audioList = await db.large.bulkGet(aid)
 
