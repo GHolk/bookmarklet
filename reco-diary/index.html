@@ -1102,7 +1102,9 @@ let $id = new Proxy({}, {
               r2.push(map[id])
               map[id] = null
           }
-          assert(map.find(x => Boolean(x)), {alert:'un-order record exist'})
+          assert(map.filter(x => Boolean(x)).length == 0, {
+              alert:'un-order record exist'
+          })
           records = r2
           if (opt.prompt == 'range') {
               const range = prompt('range [$1...$2]?', recorder.recordFocus)
