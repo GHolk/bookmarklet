@@ -209,12 +209,17 @@ TODO
       </select>
       <label>
         <input class="toc-set reset-default" type="checkbox"
-               onchange="recorder.playHeadLevelSet({level:2 /*,play:true*/, event})">
-        toc</label>
+               onchange="recorder.playHeadLevelSet({level:2 /*,play:true*/, event})">toc
+      </label>
       <label>
         <input class="toc-set reset-default" type="checkbox"
-               onchange="recorder.playHeadLevelSet({level:Infinity /*,play:true*/, event})">
-        lv3</label>
+               onchange="recorder.playHeadLevelSet({level:Infinity /*,play:true*/, event})">lv3
+      </label>
+      <label>
+        <input class="reset-default" type="checkbox"
+               data-rate="2"
+               onchange="recorder.playRateSet({event})">x2
+      </label>
       <button onclick="recorder.titleSet({target:'focus'})">name</button>
       <select onchange="recorder.titleLevelOnChange(event)">
         <option value="">title</option>
@@ -234,7 +239,6 @@ TODO
                 title="clear date" >
             unset</button>
        </div>
-
       <div class="audio-bar">
         <audio controls loop onended="recorder.playNext({event})"></audio>
         <label>
@@ -572,6 +576,12 @@ let $id = new Proxy({}, {
               $('audio').loop = e.checked
             }
           },
+        playRateSet(opt) {
+          const e = opt.event.target
+          const au = $('audio')
+          let rate = 1
+          if (e.checked) rate = Number(e.dataset.rate)
+        },
           rangeAction(o) {
               const {event} = o
               const e = event.target
