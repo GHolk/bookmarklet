@@ -581,6 +581,7 @@ let $id = new Proxy({}, {
           const au = $('audio')
           let rate = 1
           if (e.checked) rate = Number(e.dataset.rate)
+          au.defaultPlaybackRate = au.playbackRate = rate
         },
           rangeAction(o) {
               const {event} = o
