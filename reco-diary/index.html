@@ -803,10 +803,10 @@ let $id = new Proxy({}, {
               const q = tagStringFormat(...arguments)
               return $(q)
           },
-          // timeUpdateState: null,
+          timeUpdateState: null,
           timeUpdateEvent(evt) {
               const now = Date.now()
-              // this.timeUpdateState = evt
+              this.timeUpdateState = evt
               if (evt == 'start') {
                   this.chunkStartTime = now
                   this.chunkTotalTime = 0
@@ -822,7 +822,7 @@ let $id = new Proxy({}, {
               }
               else if (evt == 'stop') {
                   this.timeUpdateToggle(false)
-                  this.chunkTotalTime + (now - this.chunkStartTime)
+                  this.chunkTotalTime += (now - this.chunkStartTime)
               }
           },
           timeUpdateIntervalId: null,
@@ -839,8 +839,11 @@ let $id = new Proxy({}, {
               }
           },
           timeUpdateGetTime() {
-              const ms = Date.now() - this.chunkStartTime
-              const t = (ms + this.chunkTotalTime)
+              let t = this.chunkTotalTime
+              const evt = this.timeUpdateState
+              if (evt == 'start' || evt == 'resume') {
+                  t += (Date.now() - this.chunkStartTime)
+              }
               return t
           },
           timeUpdateFn() {
